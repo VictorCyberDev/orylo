@@ -1,0 +1,62 @@
+name: CI
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: orylo
+          POSTGRES_PASSWORD: orylo
+          POSTGRES_DB: orylo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U orylo" --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      # Throwaway CI-only values. No real credentials are used or needed.
+      DATABASE_URL: postgres://orylo:orylo@localhost:5432/orylo
+      TEST_DATABASE_URL: postgres://orylo:orylo@localhost:5432/orylo_test
+      APP_URL: http://localhost:3000
+      BETTER_AUTH_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      RECEIPT_SIGNING_KEY: ci-only-receipt-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run format
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Dependency audit (high+ only; fails on known high/critical advisories)
+        run: npm audit --audit-level=high
+      - name: Create test database
+        run: PGPASSWORD=orylo psql -h localhost -U orylo -d orylo -c "CREATE DATABASE orylo_test OWNER orylo;"
+      - name: Unit, integration and security tests (real PostgreSQL)
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser tests (journeys, axe a11y, responsive, API contract)
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            docs/evidence/screenshots
+          retention-days: 7

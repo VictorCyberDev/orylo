@@ -19,7 +19,7 @@ This session had no eGain credentials, tenant or browser. Everything marked BLOC
 | Published URL | none | `BLOCKED — no eGain tenant access in this environment` | `BLOCKED — no eGain tenant access in this environment` |
 | One-minute video | Script only: `../docs/hackathon/demo-script-60s.md` | n/a | `BLOCKED — no eGain tenant access in this environment` |
 | Submission | Draft description and checklist: `../docs/hackathon/` | n/a | n/a (Owner action) |
-| Orylo Action API implementation | Built by another engineer; not assessed here | n/a | Not assessed here |
+| Orylo Action API implementation | Implemented in `src/app/api/v1/**`; contract-tested locally by `tests/e2e/egain-api.spec.ts` (Playwright, 12 tests, local server only); **not deployed to any public URL** — eGain cannot reach it until the owner hosts it | n/a | Local contract tests only; no call from eGain has ever been made |
 
 ## Index
 
