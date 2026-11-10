@@ -29,7 +29,14 @@ describe("case state machine", () => {
 
   it("customers cannot execute, approve or verify — they may only cancel, answer, confirm, escalate or reopen", () => {
     const customerTargets = new Set(CASE_STATES.flatMap((s) => allowedTargets(s, "customer")));
-    for (const forbidden of ["ACTION_EXECUTED", "OUTCOME_PENDING_VERIFICATION", "VERIFIED_RESOLVED", "BLOCKED", "FAILED", "READY_FOR_ACTION"] as const)
+    for (const forbidden of [
+      "ACTION_EXECUTED",
+      "OUTCOME_PENDING_VERIFICATION",
+      "VERIFIED_RESOLVED",
+      "BLOCKED",
+      "FAILED",
+      "READY_FOR_ACTION",
+    ] as const)
       if (forbidden !== "READY_FOR_ACTION") expect(customerTargets.has(forbidden)).toBe(false);
   });
 

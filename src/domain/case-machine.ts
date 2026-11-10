@@ -28,7 +28,13 @@ const S: ActorKind = "system";
  * guarded by a database trigger requiring verified ledger evidence + verified required objectives.
  */
 export const TRANSITIONS: Record<CaseState, Partial<Record<CaseState, ActorKind[]>>> = {
-  OPEN: { INVESTIGATING: [S, O], AWAITING_CUSTOMER_INFORMATION: [S, O], BLOCKED: [S, O], ESCALATED: [C, O, S], CANCELLED: [C, O] },
+  OPEN: {
+    INVESTIGATING: [S, O],
+    AWAITING_CUSTOMER_INFORMATION: [S, O],
+    BLOCKED: [S, O],
+    ESCALATED: [C, O, S],
+    CANCELLED: [C, O],
+  },
   INVESTIGATING: {
     READY_FOR_ACTION: [S, O],
     AWAITING_CUSTOMER_INFORMATION: [S, O],
@@ -38,8 +44,19 @@ export const TRANSITIONS: Record<CaseState, Partial<Record<CaseState, ActorKind[
     CANCELLED: [C, O],
   },
   AWAITING_CUSTOMER_INFORMATION: { INVESTIGATING: [C, S, O], ESCALATED: [C, O, S], CANCELLED: [C, O] },
-  READY_FOR_ACTION: { AWAITING_APPROVAL: [S, O], ACTION_PENDING: [C, O, S], INVESTIGATING: [S, O], ESCALATED: [C, O, S], CANCELLED: [C, O] },
-  AWAITING_APPROVAL: { ACTION_PENDING: [O, S], READY_FOR_ACTION: [C, O, S], ESCALATED: [C, O, S], CANCELLED: [C, O] },
+  READY_FOR_ACTION: {
+    AWAITING_APPROVAL: [S, O],
+    ACTION_PENDING: [C, O, S],
+    INVESTIGATING: [S, O],
+    ESCALATED: [C, O, S],
+    CANCELLED: [C, O],
+  },
+  AWAITING_APPROVAL: {
+    ACTION_PENDING: [O, S],
+    READY_FOR_ACTION: [C, O, S],
+    ESCALATED: [C, O, S],
+    CANCELLED: [C, O],
+  },
   ACTION_PENDING: { ACTION_EXECUTED: [S], READY_FOR_ACTION: [S, O], BLOCKED: [S], ESCALATED: [C, O, S] },
   ACTION_EXECUTED: { OUTCOME_PENDING_VERIFICATION: [S], ESCALATED: [C, O, S] },
   OUTCOME_PENDING_VERIFICATION: {
@@ -50,10 +67,20 @@ export const TRANSITIONS: Record<CaseState, Partial<Record<CaseState, ActorKind[
   },
   VERIFIED_RESOLVED: { REOPENED: [C, O] },
   BLOCKED: { INVESTIGATING: [S, O], ESCALATED: [C, O, S], CANCELLED: [C, O] },
-  ESCALATED: { INVESTIGATING: [O, S], OUTCOME_PENDING_VERIFICATION: [O, S], BLOCKED: [O, S], CANCELLED: [C, O] },
+  ESCALATED: {
+    INVESTIGATING: [O, S],
+    OUTCOME_PENDING_VERIFICATION: [O, S],
+    BLOCKED: [O, S],
+    CANCELLED: [C, O],
+  },
   FAILED: { REOPENED: [C, O], ESCALATED: [C, O, S] },
   CANCELLED: { REOPENED: [C, O] },
-  REOPENED: { INVESTIGATING: [S, O], AWAITING_CUSTOMER_INFORMATION: [S, O], ESCALATED: [C, O, S], CANCELLED: [C, O] },
+  REOPENED: {
+    INVESTIGATING: [S, O],
+    AWAITING_CUSTOMER_INFORMATION: [S, O],
+    ESCALATED: [C, O, S],
+    CANCELLED: [C, O],
+  },
 };
 
 export function allowedTargets(from: CaseState, actor: ActorKind): CaseState[] {
@@ -69,7 +96,14 @@ export function canTransition(from: CaseState, to: CaseState, actor: ActorKind):
 export const isTerminal = (s: CaseState) => s === "VERIFIED_RESOLVED" || s === "CANCELLED" || s === "FAILED";
 export const isOpenState = (s: CaseState) => !isTerminal(s);
 /** States where something is waiting on a human (operator or customer). */
-export const NEEDS_ATTENTION: CaseState[] = ["ESCALATED", "AWAITING_APPROVAL", "BLOCKED", "FAILED", "REOPENED", "AWAITING_CUSTOMER_INFORMATION"];
+export const NEEDS_ATTENTION: CaseState[] = [
+  "ESCALATED",
+  "AWAITING_APPROVAL",
+  "BLOCKED",
+  "FAILED",
+  "REOPENED",
+  "AWAITING_CUSTOMER_INFORMATION",
+];
 
 export const STATE_LABEL: Record<CaseState, string> = {
   OPEN: "Open",

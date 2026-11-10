@@ -9,8 +9,14 @@ export async function rateLimit(db: DbOrTx, key: string, limit: number, windowSe
   const [row] = await db
     .insert(rateLimits)
     .values({ key, windowStart: bucket, count: 1 })
-    .onConflictDoUpdate({ target: [rateLimits.key, rateLimits.windowStart], set: { count: sql`${rateLimits.count} + 1` } })
+    .onConflictDoUpdate({
+      target: [rateLimits.key, rateLimits.windowStart],
+      set: { count: sql`${rateLimits.count} + 1` },
+    })
     .returning({ count: rateLimits.count });
-  if (row.count > limit) throw new AppError("RATE_LIMITED", "Too many attempts. Please wait a moment and try again.", { retryAfterSec: windowSec });
+  if (row.count > limit)
+    throw new AppError("RATE_LIMITED", "Too many attempts. Please wait a moment and try again.", {
+      retryAfterSec: windowSec,
+    });
   return { remaining: limit - row.count };
 }

@@ -37,13 +37,18 @@ export function parseSections(body: string): Section[] {
   if (intro) out.push({ heading: "Overview", text: intro.replace(/^#\s+.*\n?/, "").trim() });
   for (const p of parts) {
     const nl = p.indexOf("\n");
-    out.push({ heading: (nl === -1 ? p : p.slice(0, nl)).trim(), text: (nl === -1 ? "" : p.slice(nl + 1)).trim() });
+    out.push({
+      heading: (nl === -1 ? p : p.slice(0, nl)).trim(),
+      text: (nl === -1 ? "" : p.slice(nl + 1)).trim(),
+    });
   }
   return out.filter((s) => s.heading || s.text);
 }
 
 export function scanForInjection(sections: Section[]): number[] {
-  return sections.flatMap((s, i) => (INJECTION_PATTERNS.some((re) => re.test(`${s.heading}\n${s.text}`)) ? [i] : []));
+  return sections.flatMap((s, i) =>
+    INJECTION_PATTERNS.some((re) => re.test(`${s.heading}\n${s.text}`)) ? [i] : [],
+  );
 }
 
 export interface PolicyDraftInput {
@@ -69,7 +74,13 @@ export async function createPolicyVersion(db: DbOrTx, ctx: Ctx, input: PolicyDra
       if (!input.title) throw new AppError("VALIDATION", "title is required for a new policy document");
       [doc] = await tx
         .insert(policyDocuments)
-        .values({ organizationId: ctx.orgId, key: input.documentKey, title: input.title, ownerName: input.ownerName ?? ctx.actor.id, sourceLabel: input.sourceLabel ?? "Internal policy (synthetic)" })
+        .values({
+          organizationId: ctx.orgId,
+          key: input.documentKey,
+          title: input.title,
+          ownerName: input.ownerName ?? ctx.actor.id,
+          sourceLabel: input.sourceLabel ?? "Internal policy (synthetic)",
+        })
         .returning();
     }
     const [{ n }] = await tx
@@ -98,7 +109,12 @@ export async function createPolicyVersion(db: DbOrTx, ctx: Ctx, input: PolicyDra
         createdBy: ctx.actor.id,
       })
       .returning();
-    await audit(tx, ctx, { action: "policy.version.create", targetType: "policy_version", targetId: v.id, metadata: { document: doc.key, version: v.version, quarantined } });
+    await audit(tx, ctx, {
+      action: "policy.version.create",
+      targetType: "policy_version",
+      targetId: v.id,
+      metadata: { document: doc.key, version: v.version, quarantined },
+    });
     return { version: v, document: doc, quarantinedSections: quarantined };
   });
 }
@@ -109,7 +125,13 @@ export async function submitForReview(db: DbOrTx, ctx: Ctx, versionId: string) {
   const [v] = await db
     .update(policyVersions)
     .set({ status: "IN_REVIEW" })
-    .where(and(eq(policyVersions.id, versionId), eq(policyVersions.organizationId, ctx.orgId), eq(policyVersions.status, "DRAFT")))
+    .where(
+      and(
+        eq(policyVersions.id, versionId),
+        eq(policyVersions.organizationId, ctx.orgId),
+        eq(policyVersions.status, "DRAFT"),
+      ),
+    )
     .returning();
   if (!v) throw new AppError("CONFLICT", "Only a draft can be submitted for review");
   await audit(db, ctx, { action: "policy.version.submit", targetType: "policy_version", targetId: v.id });
@@ -126,22 +148,50 @@ export async function approvePolicyVersion(db: DbOrTx, ctx: Ctx, versionId: stri
       .where(and(eq(policyVersions.id, versionId), eq(policyVersions.organizationId, ctx.orgId)))
       .for("update");
     if (!v) throw notFound("Policy version");
-    if (v.status !== "IN_REVIEW") throw new AppError("CONFLICT", `Policy version is ${v.status}; only IN_REVIEW can be approved`);
-    if (v.createdBy === ctx.actor.id) throw new AppError("FORBIDDEN", "Separation of duties: the author cannot approve their own policy");
+    if (v.status !== "IN_REVIEW")
+      throw new AppError("CONFLICT", `Policy version is ${v.status}; only IN_REVIEW can be approved`);
+    if (v.createdBy === ctx.actor.id)
+      throw new AppError("FORBIDDEN", "Separation of duties: the author cannot approve their own policy");
     if (v.quarantinedSections.length)
-      throw new AppError("VALIDATION", "This version contains sections that look like instructions to an AI system and were quarantined. Edit and resubmit.", { sections: v.quarantinedSections });
+      throw new AppError(
+        "VALIDATION",
+        "This version contains sections that look like instructions to an AI system and were quarantined. Edit and resubmit.",
+        { sections: v.quarantinedSections },
+      );
     const now = new Date();
     await tx
       .update(policyVersions)
       .set({ status: "SUPERSEDED", effectiveTo: now })
-      .where(and(eq(policyVersions.documentId, v.documentId), eq(policyVersions.status, "APPROVED"), eq(policyVersions.organizationId, ctx.orgId)));
+      .where(
+        and(
+          eq(policyVersions.documentId, v.documentId),
+          eq(policyVersions.status, "APPROVED"),
+          eq(policyVersions.organizationId, ctx.orgId),
+        ),
+      );
     const [a] = await tx
       .update(policyVersions)
-      .set({ status: "APPROVED", approvedBy: ctx.actor.id, approvedAt: now, effectiveFrom: v.effectiveFrom ?? now })
+      .set({
+        status: "APPROVED",
+        approvedBy: ctx.actor.id,
+        approvedAt: now,
+        effectiveFrom: v.effectiveFrom ?? now,
+      })
       .where(eq(policyVersions.id, v.id))
       .returning();
-    await tx.insert(policyApprovals).values({ organizationId: ctx.orgId, policyVersionId: v.id, approverUserId: ctx.actor.id, decision: "APPROVED", comment });
-    await audit(tx, ctx, { action: "policy.version.approve", targetType: "policy_version", targetId: v.id, metadata: { version: v.version } });
+    await tx.insert(policyApprovals).values({
+      organizationId: ctx.orgId,
+      policyVersionId: v.id,
+      approverUserId: ctx.actor.id,
+      decision: "APPROVED",
+      comment,
+    });
+    await audit(tx, ctx, {
+      action: "policy.version.approve",
+      targetType: "policy_version",
+      targetId: v.id,
+      metadata: { version: v.version },
+    });
     return a;
   });
 }
@@ -152,10 +202,22 @@ export async function rejectPolicyVersion(db: DbOrTx, ctx: Ctx, versionId: strin
   const [v] = await db
     .update(policyVersions)
     .set({ status: "DRAFT" })
-    .where(and(eq(policyVersions.id, versionId), eq(policyVersions.organizationId, ctx.orgId), eq(policyVersions.status, "IN_REVIEW")))
+    .where(
+      and(
+        eq(policyVersions.id, versionId),
+        eq(policyVersions.organizationId, ctx.orgId),
+        eq(policyVersions.status, "IN_REVIEW"),
+      ),
+    )
     .returning();
   if (!v) throw new AppError("CONFLICT", "Only an in-review version can be sent back");
-  await db.insert(policyApprovals).values({ organizationId: ctx.orgId, policyVersionId: v.id, approverUserId: ctx.actor.id, decision: "CHANGES_REQUESTED", comment });
+  await db.insert(policyApprovals).values({
+    organizationId: ctx.orgId,
+    policyVersionId: v.id,
+    approverUserId: ctx.actor.id,
+    decision: "CHANGES_REQUESTED",
+    comment,
+  });
   await audit(db, ctx, { action: "policy.version.reject", targetType: "policy_version", targetId: v.id });
   return v;
 }
@@ -188,7 +250,8 @@ export async function activeRules(db: DbOrTx, orgId: string, at = new Date()): P
   const act = await activeVersions(db, orgId, at);
   const seen = new Map<string, { value: string | number | boolean; versionId: string; document: string }[]>();
   for (const { v, d } of act)
-    for (const [k, val] of Object.entries(v.rules)) seen.set(k, [...(seen.get(k) ?? []), { value: val, versionId: v.id, document: d.key }]);
+    for (const [k, val] of Object.entries(v.rules))
+      seen.set(k, [...(seen.get(k) ?? []), { value: val, versionId: v.id, document: d.key }]);
   const rules: ActiveRules["rules"] = {};
   const sources: Record<string, string> = {};
   const conflicts: ActiveRules["conflicts"] = [];
@@ -220,13 +283,29 @@ export async function isVersionCurrent(db: DbOrTx, orgId: string, versionId: str
   return !!v;
 }
 
-const STOP = new Set("a an the and or of to for in on at is are was were be been do does did can could i my me we our you your it its this that with from by as if not no how what when why who which will would should about into out up have has had get got".split(" "));
-const tokens = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((t) => t.length > 2 && !STOP.has(t));
+const STOP = new Set(
+  "a an the and or of to for in on at is are was were be been do does did can could i my me we our you your it its this that with from by as if not no how what when why who which will would should about into out up have has had get got".split(
+    " ",
+  ),
+);
+const tokens = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length > 2 && !STOP.has(t));
 
 export interface PolicyAnswer {
   status: "ANSWERED" | "NO_AUTHORITY" | "CONFLICT";
   answer?: string;
-  citations: { document: string; title: string; version: number; section: string; sourceLabel: string; versionId: string }[];
+  citations: {
+    document: string;
+    title: string;
+    version: number;
+    section: string;
+    sourceLabel: string;
+    versionId: string;
+  }[];
   message: string;
 }
 
@@ -238,7 +317,13 @@ export interface PolicyAnswer {
 export async function answerFromPolicy(db: DbOrTx, orgId: string, query: string): Promise<PolicyAnswer> {
   const q = tokens(query);
   const act = await activeVersions(db, orgId);
-  const cand: { score: number; v: (typeof act)[number]["v"]; d: (typeof act)[number]["d"]; s: Section; idx: number }[] = [];
+  const cand: {
+    score: number;
+    v: (typeof act)[number]["v"];
+    d: (typeof act)[number]["d"];
+    s: Section;
+    idx: number;
+  }[] = [];
   let quarantineHit = false;
   for (const { v, d } of act) {
     parseSections(v.body).forEach((s, idx) => {
@@ -259,7 +344,12 @@ export async function answerFromPolicy(db: DbOrTx, orgId: string, query: string)
 
   if (top.length === 0) {
     await recordGap(db, orgId, query, quarantineHit ? "INJECTION_QUARANTINE" : "NO_AUTHORITY");
-    return { status: "NO_AUTHORITY", citations: [], message: "I can't find approved policy that answers that, so I won't guess. I can pass this to a person." };
+    return {
+      status: "NO_AUTHORITY",
+      citations: [],
+      message:
+        "I can't find approved policy that answers that, so I won't guess. I can pass this to a person.",
+    };
   }
   const docs = new Set(top.map((t) => t.d.key));
   const rel = conflicts.filter((c) => c.values.some((v) => docs.has(v.document)));
@@ -271,9 +361,18 @@ export async function answerFromPolicy(db: DbOrTx, orgId: string, query: string)
       message: `Our approved policies disagree about ${rel.map((r) => r.key).join(", ")}, so I can't give you a reliable answer. I'll route this to a person who can resolve it.`,
     };
   }
-  return { status: "ANSWERED", answer: top.map((t) => t.s.text).join("\n\n"), citations: top.map(cite), message: "From our approved policy:" };
+  return {
+    status: "ANSWERED",
+    answer: top.map((t) => t.s.text).join("\n\n"),
+    citations: top.map(cite),
+    message: "From our approved policy:",
+  };
 }
-const cite = (c: { v: { id: string; version: number }; d: { key: string; title: string; sourceLabel: string }; s: Section }) => ({
+const cite = (c: {
+  v: { id: string; version: number };
+  d: { key: string; title: string; sourceLabel: string };
+  s: Section;
+}) => ({
   document: c.d.key,
   title: c.d.title,
   version: c.v.version,

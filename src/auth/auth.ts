@@ -25,7 +25,10 @@ export function createAuth(opts: { nextCookies?: boolean } = {}) {
   return betterAuth({
     secret: secret(),
     baseURL: process.env.BETTER_AUTH_URL ?? process.env.APP_URL ?? "http://localhost:3000",
-    database: drizzleAdapter(db, { provider: "pg", schema: { user: users, session: sessions, account: accounts, verification: verifications } }),
+    database: drizzleAdapter(db, {
+      provider: "pg",
+      schema: { user: users, session: sessions, account: accounts, verification: verifications },
+    }),
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 10,
@@ -39,7 +42,10 @@ export function createAuth(opts: { nextCookies?: boolean } = {}) {
       },
     },
     session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24, freshAge: 60 * 15 },
-    advanced: { useSecureCookies: isProd, defaultCookieAttributes: { httpOnly: true, sameSite: "lax", secure: isProd } },
+    advanced: {
+      useSecureCookies: isProd,
+      defaultCookieAttributes: { httpOnly: true, sameSite: "lax", secure: isProd },
+    },
     rateLimit: {
       enabled: true,
       window: 60,

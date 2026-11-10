@@ -9,7 +9,8 @@ export function signingKey(): string {
   return "dev-only-receipt-signing-key";
 }
 
-export const hmacHex = (data: string, key = signingKey()) => createHmac("sha256", key).update(data).digest("hex");
+export const hmacHex = (data: string, key = signingKey()) =>
+  createHmac("sha256", key).update(data).digest("hex");
 
 export function safeEqualHex(a: string, b: string): boolean {
   const ab = Buffer.from(a, "utf8");

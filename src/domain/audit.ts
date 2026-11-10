@@ -9,7 +9,10 @@ export function redact(value: unknown, depth = 0): unknown {
   if (depth > 6 || value === null || typeof value !== "object") return value;
   if (Array.isArray(value)) return value.map((v) => redact(v, depth + 1));
   return Object.fromEntries(
-    Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, SECRET_KEYS.test(k) ? "[redacted]" : redact(v, depth + 1)]),
+    Object.entries(value as Record<string, unknown>).map(([k, v]) => [
+      k,
+      SECRET_KEYS.test(k) ? "[redacted]" : redact(v, depth + 1),
+    ]),
   );
 }
 
@@ -21,7 +24,11 @@ export interface AuditInput {
   metadata?: Record<string, unknown>;
 }
 
-export async function audit(db: DbOrTx, ctx: Pick<Ctx, "orgId" | "actor" | "requestId"> | { orgId: null; actor: Ctx["actor"]; requestId?: string }, e: AuditInput) {
+export async function audit(
+  db: DbOrTx,
+  ctx: Pick<Ctx, "orgId" | "actor" | "requestId"> | { orgId: null; actor: Ctx["actor"]; requestId?: string },
+  e: AuditInput,
+) {
   await db.insert(auditEvents).values({
     organizationId: ctx.orgId,
     actorType: ctx.actor.type,

@@ -4,8 +4,11 @@ import { login, logout } from "./helpers";
 const shot = (n: string) => `docs/evidence/screenshots/${n}.png`;
 
 test.describe.serial("Scenario A+B+G — failed cancellation, end to end in a real browser", () => {
-  test("customer: finds the facts, consents, sees verified vs pending, never 'resolved' early", async ({ page }) => {
+  test("customer: finds the facts, consents, sees verified vs pending, never 'resolved' early", async ({
+    page,
+  }) => {
     await login(page, "jordan.reyes@customer.example", /\/portal$/);
+    await page.waitForTimeout(900); // let the verified seal finish drawing
     await page.screenshot({ path: shot("portal-dashboard"), fullPage: true });
     await page.getByRole("link", { name: "Start a case" }).first().click();
     await expect(page.getByRole("heading", { name: "Tell us what happened" })).toBeVisible();
@@ -16,6 +19,7 @@ test.describe.serial("Scenario A+B+G — failed cancellation, end to end in a re
     await expect(page.getByText("What we don't know:")).toBeVisible();
     // nothing has changed yet, and nothing is claimed as verified
     await expect(page.getByText("0 of 3 verified")).toBeVisible();
+    await page.waitForTimeout(900); // let the verified seal finish drawing
     await page.screenshot({ path: shot("portal-case-awaiting-consent"), fullPage: true });
 
     // 1) cancellation correction: exact consent wording shown, then verified by read-back
@@ -33,23 +37,29 @@ test.describe.serial("Scenario A+B+G — failed cancellation, end to end in a re
     await expect(page.getByText(/No money has moved/).first()).toBeVisible();
     await expect(page.getByText("Verifying outcome").first()).toBeVisible();
     await expect(page.getByText("Everything is done and verified.")).toHaveCount(0);
+    await page.waitForTimeout(900); // let the verified seal finish drawing
     await page.screenshot({ path: shot("portal-case-partial-resolution"), fullPage: true });
     await expect(page.getByRole("heading", { name: "Talk to a person" })).toBeVisible();
     await logout(page);
   });
 
-  test("operator: sees the same state, evidence first; records the human decision; case becomes verified-resolved", async ({ page }) => {
+  test("operator: sees the same state, evidence first; records the human decision; case becomes verified-resolved", async ({
+    page,
+  }) => {
     await login(page, "ana@northfield.example", /\/app$/);
+    await page.waitForTimeout(900); // let the verified seal finish drawing
     await page.screenshot({ path: shot("operator-dashboard"), fullPage: true });
     await page.goto("/app/cases?q=Jordan");
     await page.getByRole("link", { name: /ORY-/ }).first().click();
     await expect(page.getByText(/Recommended: Record the billing team's decision/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Outcome ledger" })).toBeVisible();
     await expect(page.getByText(/stop_future_billing|Future billing stopped/).first()).toBeVisible();
+    await page.waitForTimeout(900); // let the verified seal finish drawing
     await page.screenshot({ path: shot("operator-case-detail"), fullPage: true });
     await page.getByRole("button", { name: "Record decision" }).click();
     await expect(page.getByText("Verified resolved").first()).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText("3 of 3 verified")).toBeVisible();
+    await page.waitForTimeout(900); // let the verified seal finish drawing
     await page.screenshot({ path: shot("operator-case-resolved"), fullPage: true });
     await logout(page);
   });
@@ -60,12 +70,16 @@ test.describe.serial("Scenario A+B+G — failed cancellation, end to end in a re
     await page.getByRole("link", { name: /ORY-/ }).first().click();
     await expect(page.getByText("Everything is done and verified.")).toBeVisible();
     await expect(page.getByRole("button", { name: "Reopen case" })).toBeVisible();
+    await page.waitForTimeout(900); // let the verified seal finish drawing
     await page.screenshot({ path: shot("portal-case-verified"), fullPage: true });
   });
 });
 
 test.describe("Scenario C/F in the browser", () => {
-  test("a customer cannot open another customer's case; signed-out users are redirected", async ({ page, context }) => {
+  test("a customer cannot open another customer's case; signed-out users are redirected", async ({
+    page,
+    context,
+  }) => {
     await login(page, "marcus.bell@customer.example", /\/portal$/);
     const res = await page.goto("/portal/cases/ORY-1001");
     expect(res?.status()).toBe(404);
@@ -102,6 +116,8 @@ test.describe("Lead capture", () => {
     await page.getByLabel(/^Your name/).fill("Riley Chen");
     await page.getByLabel(/^Work email/).fill("riley@example.com");
     await page.getByRole("button", { name: "Request early access" }).click();
-    await expect(page.getByRole("status").filter({ hasText: "your request is in" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("status").filter({ hasText: "your request is in" })).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

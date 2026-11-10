@@ -41,7 +41,14 @@ const createdAt = () => ts("created_at").notNull().defaultNow();
 const orgId = () => uuid("organization_id").notNull();
 
 // ---------------------------------------------------------------- enums
-export const orgRole = pgEnum("org_role", ["owner", "admin", "policy_manager", "operator", "approver", "analyst"]);
+export const orgRole = pgEnum("org_role", [
+  "owner",
+  "admin",
+  "policy_manager",
+  "operator",
+  "approver",
+  "analyst",
+]);
 export const caseState = pgEnum("case_state", [
   "OPEN",
   "INVESTIGATING",
@@ -79,7 +86,13 @@ export const actionStatus = pgEnum("action_status", [
   "DENIED",
   "CANCELLED",
 ]);
-export const policyStatus = pgEnum("policy_status", ["DRAFT", "IN_REVIEW", "APPROVED", "SUPERSEDED", "RETIRED"]);
+export const policyStatus = pgEnum("policy_status", [
+  "DRAFT",
+  "IN_REVIEW",
+  "APPROVED",
+  "SUPERSEDED",
+  "RETIRED",
+]);
 export const escalationStatus = pgEnum("escalation_status", [
   "OPEN",
   "ACKNOWLEDGED",
@@ -89,7 +102,13 @@ export const escalationStatus = pgEnum("escalation_status", [
   "CANCELLED",
 ]);
 export const workflowVersionStatus = pgEnum("workflow_version_status", ["DRAFT", "PUBLISHED", "ARCHIVED"]);
-export const executionStatus = pgEnum("execution_status", ["RUNNING", "WAITING", "COMPLETED", "FAILED", "CANCELLED"]);
+export const executionStatus = pgEnum("execution_status", [
+  "RUNNING",
+  "WAITING",
+  "COMPLETED",
+  "FAILED",
+  "CANCELLED",
+]);
 
 // ---------------------------------------------------------------- identity (Better Auth tables)
 export const users = pgTable("users", {
@@ -157,7 +176,10 @@ export const organizations = pgTable("organizations", {
   name: text("name").notNull(),
   status: text("status").notNull().default("active"),
   /** Organization-level branding overrides (display name, accent). Never secrets. */
-  branding: jsonb("branding").$type<{ displayName?: string; accent?: string; supportEmail?: string }>().notNull().default({}),
+  branding: jsonb("branding")
+    .$type<{ displayName?: string; accent?: string; supportEmail?: string }>()
+    .notNull()
+    .default({}),
   /** Retention + notification + approval thresholds. */
   settings: jsonb("settings")
     .$type<{
@@ -167,7 +189,12 @@ export const organizations = pgTable("organizations", {
       auditRetentionDays: number;
     }>()
     .notNull()
-    .default({ retentionDays: 365, approvalThresholdCents: 5000, emailNotifications: false, auditRetentionDays: 730 }),
+    .default({
+      retentionDays: 365,
+      approvalThresholdCents: 5000,
+      emailNotifications: false,
+      auditRetentionDays: 730,
+    }),
   /** True for fixtures created by the seed. Surfaced in the UI. */
   synthetic: boolean("synthetic").notNull().default(false),
   createdAt: createdAt(),
@@ -185,7 +212,10 @@ export const memberships = pgTable(
     status: text("status").notNull().default("active"),
     createdAt: createdAt(),
   },
-  (t) => [unique("memberships_org_user_uq").on(t.organizationId, t.userId), index("memberships_user_idx").on(t.userId)],
+  (t) => [
+    unique("memberships_org_user_uq").on(t.organizationId, t.userId),
+    index("memberships_user_idx").on(t.userId),
+  ],
 );
 
 export const invitations = pgTable(
@@ -213,7 +243,10 @@ export const apiKeys = pgTable(
     name: text("name").notNull(),
     prefix: text("prefix").notNull(),
     keyHash: text("key_hash").notNull().unique(),
-    scopes: text("scopes").array().notNull().default(sql`'{}'::text[]`),
+    scopes: text("scopes")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
     lastUsedAt: ts("last_used_at"),
     revokedAt: ts("revoked_at"),
@@ -234,7 +267,10 @@ export const queues = pgTable(
     rules: jsonb("rules").$type<Record<string, unknown>>().notNull().default({}),
     createdAt: createdAt(),
   },
-  (t) => [unique("queues_org_key_uq").on(t.organizationId, t.key), unique("queues_id_org_uq").on(t.id, t.organizationId)],
+  (t) => [
+    unique("queues_org_key_uq").on(t.organizationId, t.key),
+    unique("queues_id_org_uq").on(t.id, t.organizationId),
+  ],
 );
 
 // ---------------------------------------------------------------- customers
@@ -276,7 +312,10 @@ export const policyDocuments = pgTable(
     sourceLabel: text("source_label").notNull().default("Internal policy (synthetic)"),
     createdAt: createdAt(),
   },
-  (t) => [unique("policy_docs_org_key_uq").on(t.organizationId, t.key), unique("policy_docs_id_org_uq").on(t.id, t.organizationId)],
+  (t) => [
+    unique("policy_docs_org_key_uq").on(t.organizationId, t.key),
+    unique("policy_docs_id_org_uq").on(t.id, t.organizationId),
+  ],
 );
 
 export const policyVersions = pgTable(
@@ -297,7 +336,10 @@ export const policyVersions = pgTable(
      * against prompt injection via knowledge content.
      */
     rules: jsonb("rules").$type<Record<string, string | number | boolean>>().notNull().default({}),
-    topics: text("topics").array().notNull().default(sql`'{}'::text[]`),
+    topics: text("topics")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     contentSha256: text("content_sha256").notNull(),
     supersedesId: uuid("supersedes_id"),
     /** Sections quarantined by the injection scanner (indices into the section list). */
@@ -308,11 +350,16 @@ export const policyVersions = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    foreignKey({ columns: [t.documentId, t.organizationId], foreignColumns: [policyDocuments.id, policyDocuments.organizationId] }),
+    foreignKey({
+      columns: [t.documentId, t.organizationId],
+      foreignColumns: [policyDocuments.id, policyDocuments.organizationId],
+    }),
     unique("policy_versions_doc_ver_uq").on(t.documentId, t.version),
     unique("policy_versions_id_org_uq").on(t.id, t.organizationId),
     // Only ONE approved version may be live per document.
-    uniqueIndex("policy_versions_one_approved_uq").on(t.documentId).where(sql`${t.status} = 'APPROVED'`),
+    uniqueIndex("policy_versions_one_approved_uq")
+      .on(t.documentId)
+      .where(sql`${t.status} = 'APPROVED'`),
     index("policy_versions_org_status_idx").on(t.organizationId, t.status),
   ],
 );
@@ -328,7 +375,12 @@ export const policyApprovals = pgTable(
     comment: text("comment"),
     createdAt: createdAt(),
   },
-  (t) => [foreignKey({ columns: [t.policyVersionId, t.organizationId], foreignColumns: [policyVersions.id, policyVersions.organizationId] })],
+  (t) => [
+    foreignKey({
+      columns: [t.policyVersionId, t.organizationId],
+      foreignColumns: [policyVersions.id, policyVersions.organizationId],
+    }),
+  ],
 );
 
 export const knowledgeGaps = pgTable(
@@ -358,7 +410,10 @@ export const workflowDefinitions = pgTable(
     description: text("description"),
     createdAt: createdAt(),
   },
-  (t) => [unique("wf_def_org_key_uq").on(t.organizationId, t.key), unique("wf_def_id_org_uq").on(t.id, t.organizationId)],
+  (t) => [
+    unique("wf_def_org_key_uq").on(t.organizationId, t.key),
+    unique("wf_def_id_org_uq").on(t.id, t.organizationId),
+  ],
 );
 
 export const workflowVersions = pgTable(
@@ -376,10 +431,15 @@ export const workflowVersions = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    foreignKey({ columns: [t.definitionId, t.organizationId], foreignColumns: [workflowDefinitions.id, workflowDefinitions.organizationId] }),
+    foreignKey({
+      columns: [t.definitionId, t.organizationId],
+      foreignColumns: [workflowDefinitions.id, workflowDefinitions.organizationId],
+    }),
     unique("wf_ver_def_ver_uq").on(t.definitionId, t.version),
     unique("wf_ver_id_org_uq").on(t.id, t.organizationId),
-    uniqueIndex("wf_ver_one_published_uq").on(t.definitionId).where(sql`${t.status} = 'PUBLISHED'`),
+    uniqueIndex("wf_ver_one_published_uq")
+      .on(t.definitionId)
+      .where(sql`${t.status} = 'PUBLISHED'`),
   ],
 );
 
@@ -413,9 +473,18 @@ export const resolutionCases = pgTable(
   (t) => [
     unique("cases_org_ref_uq").on(t.organizationId, t.reference),
     unique("cases_id_org_uq").on(t.id, t.organizationId),
-    foreignKey({ columns: [t.customerId, t.organizationId], foreignColumns: [customers.id, customers.organizationId] }),
-    foreignKey({ columns: [t.queueId, t.organizationId], foreignColumns: [queues.id, queues.organizationId] }),
-    foreignKey({ columns: [t.workflowVersionId, t.organizationId], foreignColumns: [workflowVersions.id, workflowVersions.organizationId] }),
+    foreignKey({
+      columns: [t.customerId, t.organizationId],
+      foreignColumns: [customers.id, customers.organizationId],
+    }),
+    foreignKey({
+      columns: [t.queueId, t.organizationId],
+      foreignColumns: [queues.id, queues.organizationId],
+    }),
+    foreignKey({
+      columns: [t.workflowVersionId, t.organizationId],
+      foreignColumns: [workflowVersions.id, workflowVersions.organizationId],
+    }),
     index("cases_org_state_idx").on(t.organizationId, t.state),
     index("cases_customer_idx").on(t.customerId),
     index("cases_assignee_idx").on(t.organizationId, t.assigneeUserId),
@@ -440,7 +509,10 @@ export const caseObjectives = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    foreignKey({ columns: [t.caseId, t.organizationId], foreignColumns: [resolutionCases.id, resolutionCases.organizationId] }).onDelete("cascade"),
+    foreignKey({
+      columns: [t.caseId, t.organizationId],
+      foreignColumns: [resolutionCases.id, resolutionCases.organizationId],
+    }).onDelete("cascade"),
     unique("case_objectives_case_key_uq").on(t.caseId, t.key),
     unique("case_objectives_id_org_uq").on(t.id, t.organizationId),
   ],
@@ -465,7 +537,10 @@ export const caseEvents = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    foreignKey({ columns: [t.caseId, t.organizationId], foreignColumns: [resolutionCases.id, resolutionCases.organizationId] }),
+    foreignKey({
+      columns: [t.caseId, t.organizationId],
+      foreignColumns: [resolutionCases.id, resolutionCases.organizationId],
+    }),
     unique("case_events_case_seq_uq").on(t.caseId, t.seq),
     index("case_events_case_idx").on(t.caseId, t.seq),
   ],
@@ -487,7 +562,12 @@ export const caseEvidence = pgTable(
     content: bytea("content").notNull(),
     createdAt: createdAt(),
   },
-  (t) => [foreignKey({ columns: [t.caseId, t.organizationId], foreignColumns: [resolutionCases.id, resolutionCases.organizationId] })],
+  (t) => [
+    foreignKey({
+      columns: [t.caseId, t.organizationId],
+      foreignColumns: [resolutionCases.id, resolutionCases.organizationId],
+    }),
+  ],
 );
 
 export const customerAccessGrants = pgTable(
@@ -498,7 +578,10 @@ export const customerAccessGrants = pgTable(
     customerId: uuid("customer_id").notNull(),
     caseId: uuid("case_id"),
     tokenHash: text("token_hash").notNull().unique(),
-    scopes: text("scopes").array().notNull().default(sql`'{}'::text[]`),
+    scopes: text("scopes")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     issuedVia: text("issued_via").notNull(), // operator | egain | portal
     expiresAt: ts("expires_at").notNull(),
     revokedAt: ts("revoked_at"),
@@ -506,8 +589,14 @@ export const customerAccessGrants = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    foreignKey({ columns: [t.customerId, t.organizationId], foreignColumns: [customers.id, customers.organizationId] }),
-    foreignKey({ columns: [t.caseId, t.organizationId], foreignColumns: [resolutionCases.id, resolutionCases.organizationId] }),
+    foreignKey({
+      columns: [t.customerId, t.organizationId],
+      foreignColumns: [customers.id, customers.organizationId],
+    }),
+    foreignKey({
+      columns: [t.caseId, t.organizationId],
+      foreignColumns: [resolutionCases.id, resolutionCases.organizationId],
+    }),
   ],
 );
 
@@ -524,9 +613,17 @@ export const assignments = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    foreignKey({ columns: [t.caseId, t.organizationId], foreignColumns: [resolutionCases.id, resolutionCases.organizationId] }),
-    foreignKey({ columns: [t.queueId, t.organizationId], foreignColumns: [queues.id, queues.organizationId] }),
-    uniqueIndex("assignments_one_active_uq").on(t.caseId).where(sql`${t.active} = true`),
+    foreignKey({
+      columns: [t.caseId, t.organizationId],
+      foreignColumns: [resolutionCases.id, resolutionCases.organizationId],
+    }),
+    foreignKey({
+      columns: [t.queueId, t.organizationId],
+      foreignColumns: [queues.id, queues.organizationId],
+    }),
+    uniqueIndex("assignments_one_active_uq")
+      .on(t.caseId)
+      .where(sql`${t.active} = true`),
   ],
 );
 
@@ -546,11 +643,19 @@ export const workflowExecutions = pgTable(
     completedAt: ts("completed_at"),
   },
   (t) => [
-    foreignKey({ columns: [t.caseId, t.organizationId], foreignColumns: [resolutionCases.id, resolutionCases.organizationId] }),
-    foreignKey({ columns: [t.workflowVersionId, t.organizationId], foreignColumns: [workflowVersions.id, workflowVersions.organizationId] }),
+    foreignKey({
+      columns: [t.caseId, t.organizationId],
+      foreignColumns: [resolutionCases.id, resolutionCases.organizationId],
+    }),
+    foreignKey({
+      columns: [t.workflowVersionId, t.organizationId],
+      foreignColumns: [workflowVersions.id, workflowVersions.organizationId],
+    }),
     unique("wf_exec_id_org_uq").on(t.id, t.organizationId),
     // At most one live execution per case.
-    uniqueIndex("wf_exec_one_live_uq").on(t.caseId).where(sql`${t.status} in ('RUNNING','WAITING')`),
+    uniqueIndex("wf_exec_one_live_uq")
+      .on(t.caseId)
+      .where(sql`${t.status} in ('RUNNING','WAITING')`),
   ],
 );
 
@@ -571,7 +676,10 @@ export const workflowStepExecutions = pgTable(
     finishedAt: ts("finished_at"),
   },
   (t) => [
-    foreignKey({ columns: [t.executionId, t.organizationId], foreignColumns: [workflowExecutions.id, workflowExecutions.organizationId] }),
+    foreignKey({
+      columns: [t.executionId, t.organizationId],
+      foreignColumns: [workflowExecutions.id, workflowExecutions.organizationId],
+    }),
     index("wf_step_exec_idx").on(t.executionId),
   ],
 );
@@ -600,9 +708,18 @@ export const actionRequests = pgTable(
     updatedAt: ts("updated_at").notNull().defaultNow(),
   },
   (t) => [
-    foreignKey({ columns: [t.caseId, t.organizationId], foreignColumns: [resolutionCases.id, resolutionCases.organizationId] }),
-    foreignKey({ columns: [t.customerId, t.organizationId], foreignColumns: [customers.id, customers.organizationId] }),
-    foreignKey({ columns: [t.policyVersionId, t.organizationId], foreignColumns: [policyVersions.id, policyVersions.organizationId] }),
+    foreignKey({
+      columns: [t.caseId, t.organizationId],
+      foreignColumns: [resolutionCases.id, resolutionCases.organizationId],
+    }),
+    foreignKey({
+      columns: [t.customerId, t.organizationId],
+      foreignColumns: [customers.id, customers.organizationId],
+    }),
+    foreignKey({
+      columns: [t.policyVersionId, t.organizationId],
+      foreignColumns: [policyVersions.id, policyVersions.organizationId],
+    }),
     unique("action_requests_org_idem_uq").on(t.organizationId, t.idempotencyKey),
     unique("action_requests_id_org_uq").on(t.id, t.organizationId),
     index("action_requests_case_idx").on(t.caseId),
@@ -624,7 +741,10 @@ export const actionApprovals = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    foreignKey({ columns: [t.actionRequestId, t.organizationId], foreignColumns: [actionRequests.id, actionRequests.organizationId] }),
+    foreignKey({
+      columns: [t.actionRequestId, t.organizationId],
+      foreignColumns: [actionRequests.id, actionRequests.organizationId],
+    }),
     index("action_approvals_req_idx").on(t.actionRequestId),
   ],
 );
@@ -646,7 +766,10 @@ export const actionAttempts = pgTable(
     finishedAt: ts("finished_at"),
   },
   (t) => [
-    foreignKey({ columns: [t.actionRequestId, t.organizationId], foreignColumns: [actionRequests.id, actionRequests.organizationId] }),
+    foreignKey({
+      columns: [t.actionRequestId, t.organizationId],
+      foreignColumns: [actionRequests.id, actionRequests.organizationId],
+    }),
     unique("action_attempts_req_no_uq").on(t.actionRequestId, t.attemptNo),
   ],
 );
@@ -667,7 +790,10 @@ export const actionReceipts = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    foreignKey({ columns: [t.actionRequestId, t.organizationId], foreignColumns: [actionRequests.id, actionRequests.organizationId] }),
+    foreignKey({
+      columns: [t.actionRequestId, t.organizationId],
+      foreignColumns: [actionRequests.id, actionRequests.organizationId],
+    }),
     unique("action_receipts_req_uq").on(t.actionRequestId),
     unique("action_receipts_no_uq").on(t.receiptNo),
   ],
@@ -699,7 +825,10 @@ export const outcomeLedger = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    foreignKey({ columns: [t.caseId, t.organizationId], foreignColumns: [resolutionCases.id, resolutionCases.organizationId] }),
+    foreignKey({
+      columns: [t.caseId, t.organizationId],
+      foreignColumns: [resolutionCases.id, resolutionCases.organizationId],
+    }),
     unique("ledger_org_seq_uq").on(t.organizationId, t.seq),
     unique("ledger_id_org_uq").on(t.id, t.organizationId),
     index("ledger_case_idx").on(t.caseId),
@@ -729,8 +858,14 @@ export const escalations = pgTable(
     updatedAt: ts("updated_at").notNull().defaultNow(),
   },
   (t) => [
-    foreignKey({ columns: [t.caseId, t.organizationId], foreignColumns: [resolutionCases.id, resolutionCases.organizationId] }),
-    foreignKey({ columns: [t.queueId, t.organizationId], foreignColumns: [queues.id, queues.organizationId] }),
+    foreignKey({
+      columns: [t.caseId, t.organizationId],
+      foreignColumns: [resolutionCases.id, resolutionCases.organizationId],
+    }),
+    foreignKey({
+      columns: [t.queueId, t.organizationId],
+      foreignColumns: [queues.id, queues.organizationId],
+    }),
     index("escalations_org_status_idx").on(t.organizationId, t.status),
     index("escalations_case_idx").on(t.caseId),
   ],
@@ -756,8 +891,14 @@ export const notifications = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    foreignKey({ columns: [t.recipientCustomerId, t.organizationId], foreignColumns: [customers.id, customers.organizationId] }),
-    foreignKey({ columns: [t.caseId, t.organizationId], foreignColumns: [resolutionCases.id, resolutionCases.organizationId] }),
+    foreignKey({
+      columns: [t.recipientCustomerId, t.organizationId],
+      foreignColumns: [customers.id, customers.organizationId],
+    }),
+    foreignKey({
+      columns: [t.caseId, t.organizationId],
+      foreignColumns: [resolutionCases.id, resolutionCases.organizationId],
+    }),
     index("notifications_user_idx").on(t.recipientUserId, t.readAt),
     index("notifications_customer_idx").on(t.recipientCustomerId, t.readAt),
   ],
@@ -777,7 +918,10 @@ export const integrationConnections = pgTable(
     secretRef: text("secret_ref"),
     createdAt: createdAt(),
   },
-  (t) => [unique("integration_org_provider_uq").on(t.organizationId, t.provider), unique("integration_id_org_uq").on(t.id, t.organizationId)],
+  (t) => [
+    unique("integration_org_provider_uq").on(t.organizationId, t.provider),
+    unique("integration_id_org_uq").on(t.id, t.organizationId),
+  ],
 );
 
 export const integrationEvents = pgTable(
@@ -794,7 +938,10 @@ export const integrationEvents = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    foreignKey({ columns: [t.connectionId, t.organizationId], foreignColumns: [integrationConnections.id, integrationConnections.organizationId] }),
+    foreignKey({
+      columns: [t.connectionId, t.organizationId],
+      foreignColumns: [integrationConnections.id, integrationConnections.organizationId],
+    }),
     index("integration_events_org_idx").on(t.organizationId, t.createdAt),
   ],
 );
@@ -815,7 +962,10 @@ export const auditEvents = pgTable(
     requestId: text("request_id"),
     createdAt: createdAt(),
   },
-  (t) => [index("audit_org_time_idx").on(t.organizationId, t.createdAt), index("audit_target_idx").on(t.targetType, t.targetId)],
+  (t) => [
+    index("audit_org_time_idx").on(t.organizationId, t.createdAt),
+    index("audit_target_idx").on(t.targetType, t.targetId),
+  ],
 );
 
 // ---------------------------------------------------------------- commercial
@@ -827,7 +977,13 @@ export const plans = pgTable("plans", {
   /** PROVISIONAL pricing experiment — not validated willingness to pay. */
   experimental: boolean("experimental").notNull().default(true),
   entitlements: jsonb("entitlements")
-    .$type<{ maxOperators: number; includedVerifiedOutcomes: number; workflows: number; apiAccess: boolean; customBranding: boolean }>()
+    .$type<{
+      maxOperators: number;
+      includedVerifiedOutcomes: number;
+      workflows: number;
+      apiAccess: boolean;
+      customBranding: boolean;
+    }>()
     .notNull(),
   createdAt: createdAt(),
 });
@@ -848,7 +1004,10 @@ export const subscriptions = pgTable(
     cancelledAt: ts("cancelled_at"),
     createdAt: createdAt(),
   },
-  (t) => [unique("subscriptions_org_uq").on(t.organizationId), unique("subscriptions_id_org_uq").on(t.id, t.organizationId)],
+  (t) => [
+    unique("subscriptions_org_uq").on(t.organizationId),
+    unique("subscriptions_id_org_uq").on(t.id, t.organizationId),
+  ],
 );
 
 export const invoices = pgTable(
@@ -864,7 +1023,12 @@ export const invoices = pgTable(
     testMode: boolean("test_mode").notNull().default(true),
     createdAt: createdAt(),
   },
-  (t) => [foreignKey({ columns: [t.subscriptionId, t.organizationId], foreignColumns: [subscriptions.id, subscriptions.organizationId] })],
+  (t) => [
+    foreignKey({
+      columns: [t.subscriptionId, t.organizationId],
+      foreignColumns: [subscriptions.id, subscriptions.organizationId],
+    }),
+  ],
 );
 
 export const usageRecords = pgTable(
@@ -897,16 +1061,13 @@ export const evaluationRuns = pgTable("evaluation_runs", {
   finishedAt: ts("finished_at"),
 });
 
-export const testFixtures = pgTable(
-  "test_fixtures",
-  {
-    id: pk(),
-    key: text("key").notNull().unique(),
-    description: text("description").notNull(),
-    data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
-    createdAt: createdAt(),
-  },
-);
+export const testFixtures = pgTable("test_fixtures", {
+  id: pk(),
+  key: text("key").notNull().unique(),
+  description: text("description").notNull(),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: createdAt(),
+});
 
 // ---------------------------------------------------------------- marketing & infra
 export const leads = pgTable(
@@ -956,7 +1117,10 @@ export const simAccounts = pgTable(
   (t) => [
     unique("sim_accounts_org_num_uq").on(t.organizationId, t.accountNumber),
     unique("sim_accounts_id_org_uq").on(t.id, t.organizationId),
-    foreignKey({ columns: [t.customerId, t.organizationId], foreignColumns: [customers.id, customers.organizationId] }),
+    foreignKey({
+      columns: [t.customerId, t.organizationId],
+      foreignColumns: [customers.id, customers.organizationId],
+    }),
   ],
 );
 
@@ -971,7 +1135,12 @@ export const simCancellationRequests = pgTable(
     status: text("status").notNull(), // RECEIVED | PROCESSED | FAILED_TO_APPLY
     note: text("note"),
   },
-  (t) => [foreignKey({ columns: [t.accountId, t.organizationId], foreignColumns: [simAccounts.id, simAccounts.organizationId] })],
+  (t) => [
+    foreignKey({
+      columns: [t.accountId, t.organizationId],
+      foreignColumns: [simAccounts.id, simAccounts.organizationId],
+    }),
+  ],
 );
 
 export const simCharges = pgTable(
@@ -985,7 +1154,12 @@ export const simCharges = pgTable(
     chargedAt: ts("charged_at").notNull(),
     status: text("status").notNull().default("POSTED"), // POSTED | UNDER_REVIEW
   },
-  (t) => [foreignKey({ columns: [t.accountId, t.organizationId], foreignColumns: [simAccounts.id, simAccounts.organizationId] })],
+  (t) => [
+    foreignKey({
+      columns: [t.accountId, t.organizationId],
+      foreignColumns: [simAccounts.id, simAccounts.organizationId],
+    }),
+  ],
 );
 
 export const simBillingReviews = pgTable(
@@ -1003,7 +1177,10 @@ export const simBillingReviews = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    foreignKey({ columns: [t.accountId, t.organizationId], foreignColumns: [simAccounts.id, simAccounts.organizationId] }),
+    foreignKey({
+      columns: [t.accountId, t.organizationId],
+      foreignColumns: [simAccounts.id, simAccounts.organizationId],
+    }),
     unique("sim_reviews_ref_uq").on(t.externalRef),
     uniqueIndex("sim_reviews_one_per_charge_uq").on(t.chargeId),
   ],

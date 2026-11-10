@@ -22,10 +22,17 @@ export interface Ctx {
   requestId?: string;
 }
 
-export const systemCtx = (orgId: string, id = "orylo-engine"): Ctx => ({ orgId, actor: { type: "system", id } });
+export const systemCtx = (orgId: string, id = "orylo-engine"): Ctx => ({
+  orgId,
+  actor: { type: "system", id },
+});
 
 export const actorCustomerId = (a: Actor): string | undefined =>
   a.type === "customer" || a.type === "channel" ? a.customerId : undefined;
 /** Role matrix treats a verified channel like the customer it represents. */
 export const actorKind = (a: Actor): "customer" | "operator" | "system" =>
-  a.type === "operator" ? "operator" : a.type === "system" || a.type === "integration" ? "system" : "customer";
+  a.type === "operator"
+    ? "operator"
+    : a.type === "system" || a.type === "integration"
+      ? "system"
+      : "customer";

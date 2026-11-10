@@ -24,7 +24,8 @@ export const SIM_MODES: SimMode[] = ["normal", "failure", "delay", "duplicate", 
 
 export class AdapterError extends Error {
   constructor(
-    public readonly code: "ADAPTER_FAILURE" | "ADAPTER_TIMEOUT" | "ADAPTER_DENIED" | "STALE_STATE" | "NOT_FOUND",
+    public readonly code:
+      "ADAPTER_FAILURE" | "ADAPTER_TIMEOUT" | "ADAPTER_DENIED" | "STALE_STATE" | "NOT_FOUND",
     message: string,
     public readonly retriable: boolean,
   ) {
@@ -82,23 +83,49 @@ export interface SubscriptionProvider {
   readCancellationRequests(orgId: string, accountId: string): Promise<CancellationRequest[]>;
   readCharges(orgId: string, accountId: string): Promise<Charge[]>;
   readBillingReview(orgId: string, chargeId: string): Promise<BillingReview | null>;
-  correctCancellation(a: { orgId: string; accountId: string; expectedVersion: number; externalKey: string; effectiveAt: Date }): Promise<MutationResult>;
-  createBillingReview(a: { orgId: string; accountId: string; chargeId: string; externalKey: string }): Promise<MutationResult>;
+  correctCancellation(a: {
+    orgId: string;
+    accountId: string;
+    expectedVersion: number;
+    externalKey: string;
+    effectiveAt: Date;
+  }): Promise<MutationResult>;
+  createBillingReview(a: {
+    orgId: string;
+    accountId: string;
+    chargeId: string;
+    externalKey: string;
+  }): Promise<MutationResult>;
   /** Simulates the provider's human billing team deciding a review. Operator-only in Orylo. */
-  recordReviewDecision(a: { orgId: string; chargeId: string; decision: "APPROVED_FOR_REFUND_PROCESSING" | "DENIED"; externalKey: string }): Promise<MutationResult>;
+  recordReviewDecision(a: {
+    orgId: string;
+    chargeId: string;
+    decision: "APPROVED_FOR_REFUND_PROCESSING" | "DENIED";
+    externalKey: string;
+  }): Promise<MutationResult>;
 }
 
 /** Hash of the fields that matter for consent: if they change after consent, the consent is stale. */
 export const accountStateHash = (a: AccountState) =>
-  sha256Hex(canonicalJson({ id: a.accountId, status: a.status, billingActive: a.billingActive, version: a.version }));
+  sha256Hex(
+    canonicalJson({ id: a.accountId, status: a.status, billingActive: a.billingActive, version: a.version }),
+  );
 
 export async function getSimConfig(db: DbOrTx, orgId: string): Promise<{ mode: SimMode; delayMs: number }> {
   const [c] = await db
     .select({ config: integrationConnections.config })
     .from(integrationConnections)
-    .where(and(eq(integrationConnections.organizationId, orgId), eq(integrationConnections.provider, "demo_subscription")));
+    .where(
+      and(
+        eq(integrationConnections.organizationId, orgId),
+        eq(integrationConnections.provider, "demo_subscription"),
+      ),
+    );
   const cfg = (c?.config ?? {}) as { mode?: SimMode; delayMs?: number };
-  return { mode: SIM_MODES.includes(cfg.mode as SimMode) ? (cfg.mode as SimMode) : "normal", delayMs: cfg.delayMs ?? 400 };
+  return {
+    mode: SIM_MODES.includes(cfg.mode as SimMode) ? (cfg.mode as SimMode) : "normal",
+    delayMs: cfg.delayMs ?? 400,
+  };
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -112,7 +139,8 @@ export class DemoSubscriptionAdapter implements SubscriptionProvider {
   ) {}
 
   async readAccount(orgId: string, accountNumber: string): Promise<AccountState | null> {
-    if (this.mode === "auth_denied") throw new AdapterError("ADAPTER_DENIED", "Provider rejected our credentials (403)", false);
+    if (this.mode === "auth_denied")
+      throw new AdapterError("ADAPTER_DENIED", "Provider rejected our credentials (403)", false);
     const [a] = await this.db
       .select()
       .from(simAccounts)
@@ -121,13 +149,18 @@ export class DemoSubscriptionAdapter implements SubscriptionProvider {
   }
 
   async hasOperation(orgId: string, externalKey: string): Promise<boolean> {
-    if (this.mode === "auth_denied") throw new AdapterError("ADAPTER_DENIED", "Provider rejected our credentials (403)", false);
-    const [op] = await this.db.select({ id: simOperations.id }).from(simOperations).where(and(eq(simOperations.organizationId, orgId), eq(simOperations.externalKey, externalKey)));
+    if (this.mode === "auth_denied")
+      throw new AdapterError("ADAPTER_DENIED", "Provider rejected our credentials (403)", false);
+    const [op] = await this.db
+      .select({ id: simOperations.id })
+      .from(simOperations)
+      .where(and(eq(simOperations.organizationId, orgId), eq(simOperations.externalKey, externalKey)));
     return !!op;
   }
 
   async listAccounts(orgId: string, customerId: string): Promise<AccountState[]> {
-    if (this.mode === "auth_denied") throw new AdapterError("ADAPTER_DENIED", "Provider rejected our credentials (403)", false);
+    if (this.mode === "auth_denied")
+      throw new AdapterError("ADAPTER_DENIED", "Provider rejected our credentials (403)", false);
     const rows = await this.db
       .select()
       .from(simAccounts)
@@ -151,16 +184,23 @@ export class DemoSubscriptionAdapter implements SubscriptionProvider {
   }
 
   async readCancellationRequests(orgId: string, accountId: string) {
-    if (this.mode === "auth_denied") throw new AdapterError("ADAPTER_DENIED", "Provider rejected our credentials (403)", false);
+    if (this.mode === "auth_denied")
+      throw new AdapterError("ADAPTER_DENIED", "Provider rejected our credentials (403)", false);
     return this.db
       .select()
       .from(simCancellationRequests)
-      .where(and(eq(simCancellationRequests.organizationId, orgId), eq(simCancellationRequests.accountId, accountId)))
+      .where(
+        and(
+          eq(simCancellationRequests.organizationId, orgId),
+          eq(simCancellationRequests.accountId, accountId),
+        ),
+      )
       .orderBy(desc(simCancellationRequests.requestedAt));
   }
 
   async readCharges(orgId: string, accountId: string) {
-    if (this.mode === "auth_denied") throw new AdapterError("ADAPTER_DENIED", "Provider rejected our credentials (403)", false);
+    if (this.mode === "auth_denied")
+      throw new AdapterError("ADAPTER_DENIED", "Provider rejected our credentials (403)", false);
     return this.db
       .select()
       .from(simCharges)
@@ -177,8 +217,10 @@ export class DemoSubscriptionAdapter implements SubscriptionProvider {
   }
 
   private gate() {
-    if (this.mode === "failure") throw new AdapterError("ADAPTER_FAILURE", "Provider returned 503 Service Unavailable", true);
-    if (this.mode === "auth_denied") throw new AdapterError("ADAPTER_DENIED", "Provider rejected our credentials (403)", false);
+    if (this.mode === "failure")
+      throw new AdapterError("ADAPTER_FAILURE", "Provider returned 503 Service Unavailable", true);
+    if (this.mode === "auth_denied")
+      throw new AdapterError("ADAPTER_DENIED", "Provider rejected our credentials (403)", false);
   }
 
   /** Run `fn` once, or twice in duplicate mode (at-least-once delivery), then optionally stall (delay mode). */
@@ -203,22 +245,61 @@ export class DemoSubscriptionAdapter implements SubscriptionProvider {
         if (!acct) throw new AdapterError("NOT_FOUND", "Account not found", false);
         // stale_state mode: another system changed the account after the caller read it.
         if (this.mode === "stale_state" && acct.version === a.expectedVersion) {
-          await tx.update(simAccounts).set({ version: acct.version + 1 }).where(eq(simAccounts.id, acct.id));
-          throw new AdapterError("STALE_STATE", "Account changed since it was read (version mismatch)", false);
+          await tx
+            .update(simAccounts)
+            .set({ version: acct.version + 1 })
+            .where(eq(simAccounts.id, acct.id));
+          throw new AdapterError(
+            "STALE_STATE",
+            "Account changed since it was read (version mismatch)",
+            false,
+          );
         }
-        if (acct.version !== a.expectedVersion) throw new AdapterError("STALE_STATE", `Account changed since it was read (version ${acct.version} ≠ ${a.expectedVersion})`, false);
-        if (acct.status === "CANCELLED") throw new AdapterError("STALE_STATE", "Account is already cancelled", false);
+        if (acct.version !== a.expectedVersion)
+          throw new AdapterError(
+            "STALE_STATE",
+            `Account changed since it was read (version ${acct.version} ≠ ${a.expectedVersion})`,
+            false,
+          );
+        if (acct.status === "CANCELLED")
+          throw new AdapterError("STALE_STATE", "Account is already cancelled", false);
         await tx
           .update(simAccounts)
-          .set({ status: "CANCELLED", billingActive: false, cancelledAt: a.effectiveAt, nextBillingAt: null, version: acct.version + 1 })
+          .set({
+            status: "CANCELLED",
+            billingActive: false,
+            cancelledAt: a.effectiveAt,
+            nextBillingAt: null,
+            version: acct.version + 1,
+          })
           .where(eq(simAccounts.id, acct.id));
         await tx
           .update(simCancellationRequests)
           .set({ status: "PROCESSED" })
-          .where(and(eq(simCancellationRequests.accountId, acct.id), eq(simCancellationRequests.organizationId, a.orgId), eq(simCancellationRequests.status, "FAILED_TO_APPLY")));
+          .where(
+            and(
+              eq(simCancellationRequests.accountId, acct.id),
+              eq(simCancellationRequests.organizationId, a.orgId),
+              eq(simCancellationRequests.status, "FAILED_TO_APPLY"),
+            ),
+          );
         const externalRef = `SUB-OP-${a.externalKey.slice(0, 8).toUpperCase()}`;
-        const result: MutationResult = { externalRef, detail: { accountNumber: acct.accountNumber, newStatus: "CANCELLED", billingActive: false, version: acct.version + 1 }, replayed: false };
-        await tx.insert(simOperations).values({ organizationId: a.orgId, externalKey: a.externalKey, operation: "correct_cancellation", result });
+        const result: MutationResult = {
+          externalRef,
+          detail: {
+            accountNumber: acct.accountNumber,
+            newStatus: "CANCELLED",
+            billingActive: false,
+            version: acct.version + 1,
+          },
+          replayed: false,
+        };
+        await tx.insert(simOperations).values({
+          organizationId: a.orgId,
+          externalKey: a.externalKey,
+          operation: "correct_cancellation",
+          result,
+        });
         return result;
       }),
     );
@@ -232,20 +313,53 @@ export class DemoSubscriptionAdapter implements SubscriptionProvider {
         const [ch] = await tx
           .select()
           .from(simCharges)
-          .where(and(eq(simCharges.id, a.chargeId), eq(simCharges.organizationId, a.orgId), eq(simCharges.accountId, a.accountId)))
+          .where(
+            and(
+              eq(simCharges.id, a.chargeId),
+              eq(simCharges.organizationId, a.orgId),
+              eq(simCharges.accountId, a.accountId),
+            ),
+          )
           .for("update");
         if (!ch) throw new AdapterError("NOT_FOUND", "Charge not found on this account", false);
-        const [existing] = await tx.select().from(simBillingReviews).where(eq(simBillingReviews.chargeId, ch.id));
+        const [existing] = await tx
+          .select()
+          .from(simBillingReviews)
+          .where(eq(simBillingReviews.chargeId, ch.id));
         if (existing) {
-          const r: MutationResult = { externalRef: existing.externalRef, detail: { reviewStatus: existing.status, chargeId: ch.id, note: "A review already existed for this charge" }, replayed: true };
-          await tx.insert(simOperations).values({ organizationId: a.orgId, externalKey: a.externalKey, operation: "create_billing_review", result: r });
+          const r: MutationResult = {
+            externalRef: existing.externalRef,
+            detail: {
+              reviewStatus: existing.status,
+              chargeId: ch.id,
+              note: "A review already existed for this charge",
+            },
+            replayed: true,
+          };
+          await tx.insert(simOperations).values({
+            organizationId: a.orgId,
+            externalKey: a.externalKey,
+            operation: "create_billing_review",
+            result: r,
+          });
           return r;
         }
         const externalRef = `BR-${a.externalKey.slice(0, 8).toUpperCase()}`;
-        await tx.insert(simBillingReviews).values({ organizationId: a.orgId, accountId: a.accountId, chargeId: ch.id, externalRef });
+        await tx
+          .insert(simBillingReviews)
+          .values({ organizationId: a.orgId, accountId: a.accountId, chargeId: ch.id, externalRef });
         await tx.update(simCharges).set({ status: "UNDER_REVIEW" }).where(eq(simCharges.id, ch.id));
-        const result: MutationResult = { externalRef, detail: { reviewStatus: "OPEN", chargeId: ch.id, amountCents: ch.amountCents, moneyMoved: false }, replayed: false };
-        await tx.insert(simOperations).values({ organizationId: a.orgId, externalKey: a.externalKey, operation: "create_billing_review", result });
+        const result: MutationResult = {
+          externalRef,
+          detail: { reviewStatus: "OPEN", chargeId: ch.id, amountCents: ch.amountCents, moneyMoved: false },
+          replayed: false,
+        };
+        await tx.insert(simOperations).values({
+          organizationId: a.orgId,
+          externalKey: a.externalKey,
+          operation: "create_billing_review",
+          result,
+        });
         return result;
       }),
     );
@@ -259,13 +373,32 @@ export class DemoSubscriptionAdapter implements SubscriptionProvider {
         const [rv] = await tx
           .select()
           .from(simBillingReviews)
-          .where(and(eq(simBillingReviews.chargeId, a.chargeId), eq(simBillingReviews.organizationId, a.orgId)))
+          .where(
+            and(eq(simBillingReviews.chargeId, a.chargeId), eq(simBillingReviews.organizationId, a.orgId)),
+          )
           .for("update");
         if (!rv) throw new AdapterError("NOT_FOUND", "No billing review for this charge", false);
         if (rv.status === "DECIDED") throw new AdapterError("STALE_STATE", "Review already decided", false);
-        await tx.update(simBillingReviews).set({ status: "DECIDED", decision: a.decision, decidedAt: new Date() }).where(eq(simBillingReviews.id, rv.id));
-        const result: MutationResult = { externalRef: rv.externalRef, detail: { reviewStatus: "DECIDED", decision: a.decision, moneyMoved: false, note: "Orylo records the decision only; refund processing happens in the provider's billing system." }, replayed: false };
-        await tx.insert(simOperations).values({ organizationId: a.orgId, externalKey: a.externalKey, operation: "record_review_decision", result });
+        await tx
+          .update(simBillingReviews)
+          .set({ status: "DECIDED", decision: a.decision, decidedAt: new Date() })
+          .where(eq(simBillingReviews.id, rv.id));
+        const result: MutationResult = {
+          externalRef: rv.externalRef,
+          detail: {
+            reviewStatus: "DECIDED",
+            decision: a.decision,
+            moneyMoved: false,
+            note: "Orylo records the decision only; refund processing happens in the provider's billing system.",
+          },
+          replayed: false,
+        };
+        await tx.insert(simOperations).values({
+          organizationId: a.orgId,
+          externalKey: a.externalKey,
+          operation: "record_review_decision",
+          result,
+        });
         return result;
       }),
     );

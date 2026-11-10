@@ -14,6 +14,15 @@ export default defineConfig({
     trace: "off",
     launchOptions: exe ? { executablePath: exe, args: ["--no-sandbox"] } : { args: ["--no-sandbox"] },
   },
-  projects: [{ name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 860 } } }],
-  webServer: process.env.E2E_BASE_URL ? undefined : { command: "npm run start", url: "http://localhost:3000/api/health", reuseExistingServer: true, timeout: 120_000 },
+  projects: [
+    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 860 } } },
+  ],
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: "npm run start",
+        url: "http://localhost:3000/api/health",
+        reuseExistingServer: true,
+        timeout: 120_000,
+      },
 });

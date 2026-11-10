@@ -12,7 +12,9 @@ const securityHeaders = [
       "img-src 'self' data: blob:",
       "style-src 'self' 'unsafe-inline'",
       // Next.js inline bootstrap scripts require 'unsafe-inline' without a nonce pipeline.
-      process.env.NODE_ENV === "production" ? "script-src 'self' 'unsafe-inline'" : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      process.env.NODE_ENV === "production"
+        ? "script-src 'self' 'unsafe-inline'"
+        : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "connect-src 'self'",
       "font-src 'self' data:",
       "frame-ancestors 'none'",

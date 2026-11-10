@@ -11,8 +11,28 @@ export default async function OrgPage() {
   const [o] = await db.select().from(organizations).where(eq(organizations.id, s.org.id));
   return (
     <>
-      <PageHeader title="Organization" description="Profile, approval thresholds, retention and notification configuration." actions={<a className="inline-flex min-h-11 items-center rounded-md border border-border-strong bg-surface px-4 text-sm hover:bg-surface-2" href="/api/admin/export" download>Export data (JSON)</a>} />
-      <Card><CardHeader title={o.name} description={`Slug: ${o.slug}${o.synthetic ? " · synthetic demo organization" : ""}`} /><div className="p-5"><OrgForm org={o} /></div></Card>
+      <PageHeader
+        title="Organization"
+        description="Profile, approval thresholds, retention and notification configuration."
+        actions={
+          <a
+            className="inline-flex min-h-11 items-center rounded-md border border-border-strong bg-surface px-4 text-sm hover:bg-surface-2"
+            href="/api/admin/export"
+            download
+          >
+            Export data (JSON)
+          </a>
+        }
+      />
+      <Card>
+        <CardHeader
+          title={o.name}
+          description={`Slug: ${o.slug}${o.synthetic ? " · synthetic demo organization" : ""}`}
+        />
+        <div className="p-5">
+          <OrgForm org={o} />
+        </div>
+      </Card>
     </>
   );
 }

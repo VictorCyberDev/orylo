@@ -77,17 +77,25 @@ export async function appendLedger(tx: DbOrTx, ctx: Pick<Ctx, "orgId">, e: Ledge
     remainingObjectives: e.remainingObjectives ?? [],
   };
   const entryHash = hashEntry(prevHash, seq, bodyForHash({ ...body, seq }));
-  const [row] = await tx.insert(outcomeLedger).values({ ...body, seq, prevHash, entryHash }).returning();
+  const [row] = await tx
+    .insert(outcomeLedger)
+    .values({ ...body, seq, prevHash, entryHash })
+    .returning();
   return row;
 }
 
 /** Recompute the whole chain for an organization. Anyone holding the rows can do this — no key needed. */
 export async function verifyChain(db: DbOrTx, orgId: string) {
-  const rows = await db.select().from(outcomeLedger).where(eq(outcomeLedger.organizationId, orgId)).orderBy(asc(outcomeLedger.seq));
+  const rows = await db
+    .select()
+    .from(outcomeLedger)
+    .where(eq(outcomeLedger.organizationId, orgId))
+    .orderBy(asc(outcomeLedger.seq));
   let prev = GENESIS;
   for (const r of rows) {
     const expect = hashEntry(prev, r.seq, bodyForHash(r));
-    if (r.prevHash !== prev || r.entryHash !== expect) return { ok: false as const, checked: rows.length, brokenAtSeq: r.seq };
+    if (r.prevHash !== prev || r.entryHash !== expect)
+      return { ok: false as const, checked: rows.length, brokenAtSeq: r.seq };
     prev = r.entryHash;
   }
   return { ok: true as const, checked: rows.length };

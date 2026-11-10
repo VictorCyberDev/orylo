@@ -61,7 +61,10 @@ export async function notifyCustomer(db: DbOrTx, n: Base & { customerId: string 
     });
   }
   if (c.prefs.notifyEmail) {
-    const [org] = await db.select({ s: organizations.settings }).from(organizations).where(eq(organizations.id, n.orgId));
+    const [org] = await db
+      .select({ s: organizations.settings })
+      .from(organizations)
+      .where(eq(organizations.id, n.orgId));
     if (org?.s.emailNotifications) {
       const r = await getEmailAdapter().send({ to: c.email, subject: n.title, body: n.body ?? "" });
       await db.insert(notifications).values({
@@ -94,7 +97,13 @@ export async function notifyRoles(db: DbOrTx, n: Base & { roles: OrgRole[] }) {
   const rows = await db
     .select({ userId: memberships.userId })
     .from(memberships)
-    .where(and(eq(memberships.organizationId, n.orgId), inArray(memberships.role, n.roles), eq(memberships.status, "active")));
+    .where(
+      and(
+        eq(memberships.organizationId, n.orgId),
+        inArray(memberships.role, n.roles),
+        eq(memberships.status, "active"),
+      ),
+    );
   for (const r of rows) await notifyUser(db, { ...n, userId: r.userId });
 }
 
@@ -118,11 +127,24 @@ export async function unreadCountForUser(db: DbOrTx, orgId: string, userId: stri
   const [r] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(notifications)
-    .where(and(eq(notifications.organizationId, orgId), eq(notifications.recipientUserId, userId), isNull(notifications.readAt)));
+    .where(
+      and(
+        eq(notifications.organizationId, orgId),
+        eq(notifications.recipientUserId, userId),
+        isNull(notifications.readAt),
+      ),
+    );
   return r?.n ?? 0;
 }
-export async function markRead(db: DbOrTx, orgId: string, id: string, who: { userId?: string; customerId?: string }) {
-  const own = who.userId ? eq(notifications.recipientUserId, who.userId) : eq(notifications.recipientCustomerId, who.customerId ?? "00000000-0000-0000-0000-000000000000");
+export async function markRead(
+  db: DbOrTx,
+  orgId: string,
+  id: string,
+  who: { userId?: string; customerId?: string },
+) {
+  const own = who.userId
+    ? eq(notifications.recipientUserId, who.userId)
+    : eq(notifications.recipientCustomerId, who.customerId ?? "00000000-0000-0000-0000-000000000000");
   await db
     .update(notifications)
     .set({ readAt: new Date() })

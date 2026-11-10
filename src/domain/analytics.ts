@@ -14,7 +14,10 @@ export interface ModelAssumptions {
   minutesSavedPerVerifiedOutcome: number;
   loadedCostPerHourUsd: number;
 }
-export const DEFAULT_ASSUMPTIONS: ModelAssumptions = { minutesSavedPerVerifiedOutcome: 18, loadedCostPerHourUsd: 28 };
+export const DEFAULT_ASSUMPTIONS: ModelAssumptions = {
+  minutesSavedPerVerifiedOutcome: 18,
+  loadedCostPerHourUsd: 28,
+};
 
 const n = (x: unknown) => (x === null || x === undefined ? 0 : Number(x));
 const round = (x: number, d = 1) => Math.round(x * 10 ** d) / 10 ** d;
@@ -23,7 +26,12 @@ const round = (x: number, d = 1) => Math.round(x * 10 ** d) / 10 ** d;
  * Everything here is computed from persisted rows for ONE organization. Nothing is hard-coded.
  * `estimatedSavings` is the only modelled figure and is labelled as such with its assumptions.
  */
-export async function computeAnalytics(db: DbOrTx, ctx: Ctx, f: AnalyticsFilter = {}, assumptions: ModelAssumptions = DEFAULT_ASSUMPTIONS) {
+export async function computeAnalytics(
+  db: DbOrTx,
+  ctx: Ctx,
+  f: AnalyticsFilter = {},
+  assumptions: ModelAssumptions = DEFAULT_ASSUMPTIONS,
+) {
   if (ctx.actor.type !== "operator") throw forbidden();
   requirePermission(ctx.actor.role, "analytics.read");
   const org = ctx.orgId;
@@ -34,9 +42,23 @@ export async function computeAnalytics(db: DbOrTx, ctx: Ctx, f: AnalyticsFilter 
     : sql``;
   const base = sql`c.organization_id = ${org} and c.opened_at >= ${from} and c.opened_at <= ${to} ${wfJoin}`;
 
-  const q = async <T extends Record<string, unknown>>(query: ReturnType<typeof sql>) => (await db.execute<T>(query)).rows;
+  const q = async <T extends Record<string, unknown>>(query: ReturnType<typeof sql>) =>
+    (await db.execute<T>(query)).rows;
 
-  const [totals] = await q<{ total: number; open: number; closed: number; verified: number; failed: number; cancelled: number; reopened: number; escalated_cases: number; partial: number; synthetic: number; avg_first_action_h: number | null; avg_ttr_h: number | null }>(sql`
+  const [totals] = await q<{
+    total: number;
+    open: number;
+    closed: number;
+    verified: number;
+    failed: number;
+    cancelled: number;
+    reopened: number;
+    escalated_cases: number;
+    partial: number;
+    synthetic: number;
+    avg_first_action_h: number | null;
+    avg_ttr_h: number | null;
+  }>(sql`
     select count(*)::int as total,
       count(*) filter (where c.state not in ('VERIFIED_RESOLVED','CANCELLED','FAILED'))::int as open,
       count(*) filter (where c.state in ('VERIFIED_RESOLVED','CANCELLED','FAILED'))::int as closed,
@@ -80,7 +102,13 @@ export async function computeAnalytics(db: DbOrTx, ctx: Ctx, f: AnalyticsFilter 
       count(*) filter (where c.state not in ('VERIFIED_RESOLVED','CANCELLED','FAILED'))::int as open
     from resolution_cases c where ${base} group by c.category order by total desc`);
 
-  const byWorkflow = await q<{ workflow: string | null; total: number; verified: number; escalated: number; avg_ttr_h: number | null }>(sql`
+  const byWorkflow = await q<{
+    workflow: string | null;
+    total: number;
+    verified: number;
+    escalated: number;
+    avg_ttr_h: number | null;
+  }>(sql`
     select d.key as workflow, count(*)::int as total,
       count(*) filter (where c.state = 'VERIFIED_RESOLVED')::int as verified,
       count(*) filter (where c.state = 'ESCALATED')::int as escalated,
@@ -100,26 +128,65 @@ export async function computeAnalytics(db: DbOrTx, ctx: Ctx, f: AnalyticsFilter 
   return {
     range: { from, to },
     measured: {
-      cases: { total, open: n(totals?.open), closed: n(totals?.closed), verifiedResolved: verifiedOutcomes, failed: n(totals?.failed), cancelled: n(totals?.cancelled), partiallyResolved: n(totals?.partial), synthetic: n(totals?.synthetic) },
+      cases: {
+        total,
+        open: n(totals?.open),
+        closed: n(totals?.closed),
+        verifiedResolved: verifiedOutcomes,
+        failed: n(totals?.failed),
+        cancelled: n(totals?.cancelled),
+        partiallyResolved: n(totals?.partial),
+        synthetic: n(totals?.synthetic),
+      },
       reopenedCases: n(totals?.reopened),
       reopenRatePct: pct(n(totals?.reopened), total),
-      repeatContact: { customersWithMultipleCases: n(repeat?.repeaters), customers: n(repeat?.customers), ratePct: pct(n(repeat?.repeaters), n(repeat?.customers)) },
+      repeatContact: {
+        customersWithMultipleCases: n(repeat?.repeaters),
+        customers: n(repeat?.customers),
+        ratePct: pct(n(repeat?.repeaters), n(repeat?.customers)),
+      },
       humanEscalationRatePct: pct(n(totals?.escalated_cases), total),
       escalatedCases: n(totals?.escalated_cases),
-      actions: { requested: n(actions?.requested), succeeded: n(actions?.succeeded), failed: n(actions?.failed), denied: n(actions?.denied), completionRatePct: pct(n(actions?.succeeded), n(actions?.requested)) },
+      actions: {
+        requested: n(actions?.requested),
+        succeeded: n(actions?.succeeded),
+        failed: n(actions?.failed),
+        denied: n(actions?.denied),
+        completionRatePct: pct(n(actions?.succeeded), n(actions?.requested)),
+      },
       errorRatePct: pct(n(attempts?.errors), n(attempts?.total)),
       attempts: n(attempts?.total),
       timeToActionHours: totals?.avg_first_action_h === null ? null : round(n(totals?.avg_first_action_h), 2),
       timeToVerifiedResolutionHours: totals?.avg_ttr_h === null ? null : round(n(totals?.avg_ttr_h), 2),
       approvalWaitHours: approvals?.avg_wait_h === null ? null : round(n(approvals?.avg_wait_h), 2),
       approvalsRecorded: n(approvals?.n),
-      aging: ["< 1 day", "1–3 days", "3–7 days", "> 7 days"].map((b) => ({ bucket: b, count: n(aging.find((a) => a.bucket === b)?.n) })),
-      byCategory: byCategory.map((r) => ({ category: r.category, total: n(r.total), verified: n(r.verified), open: n(r.open) })),
-      byWorkflow: byWorkflow.map((r) => ({ workflow: r.workflow ?? "(none)", total: n(r.total), verified: n(r.verified), escalated: n(r.escalated), avgHoursToVerified: r.avg_ttr_h === null ? null : round(n(r.avg_ttr_h), 2) })),
+      aging: ["< 1 day", "1–3 days", "3–7 days", "> 7 days"].map((b) => ({
+        bucket: b,
+        count: n(aging.find((a) => a.bucket === b)?.n),
+      })),
+      byCategory: byCategory.map((r) => ({
+        category: r.category,
+        total: n(r.total),
+        verified: n(r.verified),
+        open: n(r.open),
+      })),
+      byWorkflow: byWorkflow.map((r) => ({
+        workflow: r.workflow ?? "(none)",
+        total: n(r.total),
+        verified: n(r.verified),
+        escalated: n(r.escalated),
+        avgHoursToVerified: r.avg_ttr_h === null ? null : round(n(r.avg_ttr_h), 2),
+      })),
       objectives: objectives.map((o) => ({ key: o.key, status: o.status, count: n(o.n) })),
     },
     /** MODEL, not measurement. Shown separately in the UI with the assumptions editable by the viewer. */
-    estimatedSavings: { kind: "illustrative-model" as const, assumptions, verifiedObjectives: objectivesVerified, hoursSaved: round(hours, 1), valueUsd: round(hours * assumptions.loadedCostPerHourUsd, 0) },
+    estimatedSavings: {
+      kind: "illustrative-model" as const,
+      assumptions,
+      verifiedObjectives: objectivesVerified,
+      hoursSaved: round(hours, 1),
+      valueUsd: round(hours * assumptions.loadedCostPerHourUsd, 0),
+    },
   };
 }
 
@@ -131,12 +198,32 @@ export async function dashboardSummary(db: DbOrTx, ctx: Ctx) {
     .where(eq(resolutionCases.organizationId, org))
     .groupBy(resolutionCases.state);
   const by = Object.fromEntries(rows.map((r) => [r.state, r.n])) as Record<string, number>;
-  const [esc] = await db.select({ n: sql<number>`count(*)::int` }).from(escalations).where(and(eq(escalations.organizationId, org), sql`${escalations.status} in ('OPEN','ACKNOWLEDGED','IN_PROGRESS')`));
-  const [fa] = await db.select({ n: sql<number>`count(*)::int` }).from(actionRequests).where(and(eq(actionRequests.organizationId, org), eq(actionRequests.status, "FAILED"), gte(actionRequests.updatedAt, new Date(Date.now() - 7 * 86_400_000))));
-  const open = Object.entries(by).filter(([s]) => !["VERIFIED_RESOLVED", "CANCELLED", "FAILED"].includes(s)).reduce((a, [, c]) => a + c, 0);
+  const [esc] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(escalations)
+    .where(
+      and(
+        eq(escalations.organizationId, org),
+        sql`${escalations.status} in ('OPEN','ACKNOWLEDGED','IN_PROGRESS')`,
+      ),
+    );
+  const [fa] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(actionRequests)
+    .where(
+      and(
+        eq(actionRequests.organizationId, org),
+        eq(actionRequests.status, "FAILED"),
+        gte(actionRequests.updatedAt, new Date(Date.now() - 7 * 86_400_000)),
+      ),
+    );
+  const open = Object.entries(by)
+    .filter(([s]) => !["VERIFIED_RESOLVED", "CANCELLED", "FAILED"].includes(s))
+    .reduce((a, [, c]) => a + c, 0);
   return {
     open,
-    needsAttention: (by.ESCALATED ?? 0) + (by.BLOCKED ?? 0) + (by.REOPENED ?? 0) + (by.AWAITING_APPROVAL ?? 0),
+    needsAttention:
+      (by.ESCALATED ?? 0) + (by.BLOCKED ?? 0) + (by.REOPENED ?? 0) + (by.AWAITING_APPROVAL ?? 0),
     openEscalations: esc?.n ?? 0,
     pendingApprovals: by.AWAITING_APPROVAL ?? 0,
     verifiedResolved: by.VERIFIED_RESOLVED ?? 0,
@@ -145,4 +232,3 @@ export async function dashboardSummary(db: DbOrTx, ctx: Ctx) {
     byState: by,
   };
 }
-

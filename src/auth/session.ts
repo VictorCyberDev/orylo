@@ -70,17 +70,42 @@ export const getCustomer = cache(async (): Promise<CustomerSession | null> => {
       .from(customers)
       .innerJoin(organizations, eq(organizations.id, customers.organizationId))
       .where(eq(customers.userId, user.id));
-    if (c) return { customer: { id: c.c.id, name: c.c.name, email: c.c.email }, org: { id: c.o.id, name: c.o.name }, via: "login", ctx: { orgId: c.o.id, actor: { type: "customer", id: user.id, customerId: c.c.id } } };
+    if (c)
+      return {
+        customer: { id: c.c.id, name: c.c.name, email: c.c.email },
+        org: { id: c.o.id, name: c.o.name },
+        via: "login",
+        ctx: { orgId: c.o.id, actor: { type: "customer", id: user.id, customerId: c.c.id } },
+      };
   }
   const token = (await cookies()).get(GRANT_COOKIE)?.value;
   if (token) {
     const [g] = await db
       .select({ g: customerAccessGrants, c: customers, o: organizations })
       .from(customerAccessGrants)
-      .innerJoin(customers, and(eq(customers.id, customerAccessGrants.customerId), eq(customers.organizationId, customerAccessGrants.organizationId)))
+      .innerJoin(
+        customers,
+        and(
+          eq(customers.id, customerAccessGrants.customerId),
+          eq(customers.organizationId, customerAccessGrants.organizationId),
+        ),
+      )
       .innerJoin(organizations, eq(organizations.id, customerAccessGrants.organizationId))
-      .where(and(eq(customerAccessGrants.tokenHash, sha256Hex(token)), isNull(customerAccessGrants.revokedAt), gt(customerAccessGrants.expiresAt, new Date())));
-    if (g) return { customer: { id: g.c.id, name: g.c.name, email: g.c.email }, org: { id: g.o.id, name: g.o.name }, via: "grant", caseScope: g.g.caseId, ctx: { orgId: g.o.id, actor: { type: "customer", id: `grant:${g.g.id}`, customerId: g.c.id } } };
+      .where(
+        and(
+          eq(customerAccessGrants.tokenHash, sha256Hex(token)),
+          isNull(customerAccessGrants.revokedAt),
+          gt(customerAccessGrants.expiresAt, new Date()),
+        ),
+      );
+    if (g)
+      return {
+        customer: { id: g.c.id, name: g.c.name, email: g.c.email },
+        org: { id: g.o.id, name: g.o.name },
+        via: "grant",
+        caseScope: g.g.caseId,
+        ctx: { orgId: g.o.id, actor: { type: "customer", id: `grant:${g.g.id}`, customerId: g.c.id } },
+      };
   }
   return null;
 });

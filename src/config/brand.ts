@@ -14,6 +14,10 @@ export const brand = {
   domain: "orylo.example",
   siteUrl: process.env.APP_URL ?? "http://localhost:3000",
   emailSender: { name: "Orylo", address: "notifications@orylo.example" },
-  demoContact: { email: "support@demo.orylo.example", phone: "+1 (555) 010-0100", note: "Demonstration contact details only." },
+  demoContact: {
+    email: "support@demo.orylo.example",
+    phone: "+1 (555) 010-0100",
+    note: "Demonstration contact details only.",
+  },
   themeColor: { light: "#F7F8F6", dark: "#0C1620" },
 } as const;

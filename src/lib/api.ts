@@ -26,16 +26,32 @@ export async function handle(req: NextRequest, fn: (requestId: string) => Promis
       if (e.code === "RATE_LIMITED") extra["Retry-After"] = String(e.details?.retryAfterSec ?? 60);
       return json({ error: { code: e.code, message: e.message } }, e.status, extra);
     }
-    if (e instanceof ZodError) return json({ error: { code: "VALIDATION", message: e.issues.map((i) => `${i.path.join(".") || "body"}: ${i.message}`).join("; ") } }, 400, { "x-request-id": requestId });
+    if (e instanceof ZodError)
+      return json(
+        {
+          error: {
+            code: "VALIDATION",
+            message: e.issues.map((i) => `${i.path.join(".") || "body"}: ${i.message}`).join("; "),
+          },
+        },
+        400,
+        { "x-request-id": requestId },
+      );
     console.error("[api error]", requestId, e);
-    return json({ error: { code: "INTERNAL", message: "Unexpected error" } }, 500, { "x-request-id": requestId });
+    return json({ error: { code: "INTERNAL", message: "Unexpected error" } }, 500, {
+      "x-request-id": requestId,
+    });
   }
 }
 
 export async function readJson(req: NextRequest) {
   const len = Number(req.headers.get("content-length") ?? 0);
   if (len > 64 * 1024) throw new AppError("VALIDATION", "Request body too large");
-  try { return await req.json(); } catch { throw new AppError("VALIDATION", "Body must be valid JSON"); }
+  try {
+    return await req.json();
+  } catch {
+    throw new AppError("VALIDATION", "Body must be valid JSON");
+  }
 }
 
 export async function apiKeyAuth(req: NextRequest, scope: string) {
@@ -46,7 +62,10 @@ export async function apiKeyAuth(req: NextRequest, scope: string) {
 }
 
 /** API key (org) + customer token (verified person). Both are required to touch a case. */
-export async function channelAuth(req: NextRequest, caseRef: string): Promise<{ ctx: Ctx; caseId: string; keyId: string }> {
+export async function channelAuth(
+  req: NextRequest,
+  caseRef: string,
+): Promise<{ ctx: Ctx; caseId: string; keyId: string }> {
   const { orgId, keyId } = await apiKeyAuth(req, "egain:actions");
   const g = await resolveGrant(db, req.headers.get("x-customer-token"), orgId);
   const ctx = channelCtx(g);

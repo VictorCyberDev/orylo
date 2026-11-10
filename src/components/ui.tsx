@@ -17,28 +17,70 @@ const btn = {
   size: { sm: "h-9 px-3 text-sm min-w-9", md: "h-11 px-4 text-[15px] min-w-11", lg: "h-12 px-6 text-base" },
 };
 export type ButtonVariant = keyof typeof btn.variant;
-export const buttonClass = (variant: ButtonVariant = "primary", size: keyof typeof btn.size = "md", extra?: string) => cn(btn.base, btn.variant[variant], btn.size[size], extra);
+export const buttonClass = (
+  variant: ButtonVariant = "primary",
+  size: keyof typeof btn.size = "md",
+  extra?: string,
+) => cn(btn.base, btn.variant[variant], btn.size[size], extra);
 
-export function Button({ variant, size, className, ...p }: ComponentProps<"button"> & { variant?: ButtonVariant; size?: keyof typeof btn.size }) {
+export function Button({
+  variant,
+  size,
+  className,
+  ...p
+}: ComponentProps<"button"> & { variant?: ButtonVariant; size?: keyof typeof btn.size }) {
   return <button type="button" {...p} className={buttonClass(variant, size, className)} />;
 }
-export function LinkButton({ variant, size, className, ...p }: ComponentProps<typeof Link> & { variant?: ButtonVariant; size?: keyof typeof btn.size }) {
+export function LinkButton({
+  variant,
+  size,
+  className,
+  ...p
+}: ComponentProps<typeof Link> & { variant?: ButtonVariant; size?: keyof typeof btn.size }) {
   return <Link {...p} className={buttonClass(variant, size, className)} />;
 }
 
 /* ---------- Inputs ---------- */
-export const inputClass = "block w-full min-h-11 rounded-md border border-border-strong bg-surface px-3 py-2 text-[15px] text-fg placeholder:text-subtle disabled:bg-[var(--disabled-bg)] disabled:text-[var(--disabled-fg)] aria-[invalid=true]:border-danger";
-export function Field({ id, label, hint, error, children, required }: { id: string; label: string; hint?: string; error?: string; children: ReactNode; required?: boolean }) {
+export const inputClass =
+  "block w-full min-h-11 rounded-md border border-border-strong bg-surface px-3 py-2 text-[15px] text-fg placeholder:text-subtle disabled:bg-[var(--disabled-bg)] disabled:text-[var(--disabled-fg)] aria-[invalid=true]:border-danger";
+export function Field({
+  id,
+  label,
+  hint,
+  error,
+  children,
+  required,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  error?: string;
+  children: ReactNode;
+  required?: boolean;
+}) {
   return (
     <div className="space-y-1.5">
       <label htmlFor={id} className="block text-sm font-medium">
         {label}
-        {required ? <span aria-hidden className="text-danger"> *</span> : null}
+        {required ? (
+          <span aria-hidden className="text-danger">
+            {" "}
+            *
+          </span>
+        ) : null}
         {required ? <span className="sr-only"> (required)</span> : null}
       </label>
       {children}
-      {hint ? <p id={`${id}-hint`} className="t-caption">{hint}</p> : null}
-      {error ? <p id={`${id}-error`} role="alert" className="text-sm text-danger">{error}</p> : null}
+      {hint ? (
+        <p id={`${id}-hint`} className="t-caption">
+          {hint}
+        </p>
+      ) : null}
+      {error ? (
+        <p id={`${id}-error`} role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -53,34 +95,116 @@ const tone = {
   accent: "bg-active text-accent-text border-accent-text/30",
 };
 export type Tone = keyof typeof tone;
-export function Badge({ tone: t = "neutral", children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
-  return <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium leading-5", tone[t], className)}>{children}</span>;
+export function Badge({
+  tone: t = "neutral",
+  children,
+  className,
+}: {
+  tone?: Tone;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-medium leading-5",
+        tone[t],
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
 }
 const stateTone: Record<CaseState, Tone> = {
-  OPEN: "info", INVESTIGATING: "info", AWAITING_CUSTOMER_INFORMATION: "warning", READY_FOR_ACTION: "accent", AWAITING_APPROVAL: "warning", ACTION_PENDING: "info",
-  ACTION_EXECUTED: "info", OUTCOME_PENDING_VERIFICATION: "warning", VERIFIED_RESOLVED: "success", BLOCKED: "danger", ESCALATED: "warning", FAILED: "danger", CANCELLED: "neutral", REOPENED: "warning",
+  OPEN: "info",
+  INVESTIGATING: "info",
+  AWAITING_CUSTOMER_INFORMATION: "warning",
+  READY_FOR_ACTION: "accent",
+  AWAITING_APPROVAL: "warning",
+  ACTION_PENDING: "info",
+  ACTION_EXECUTED: "info",
+  OUTCOME_PENDING_VERIFICATION: "warning",
+  VERIFIED_RESOLVED: "success",
+  BLOCKED: "danger",
+  ESCALATED: "warning",
+  FAILED: "danger",
+  CANCELLED: "neutral",
+  REOPENED: "warning",
 };
-export const StateBadge = ({ state, label }: { state: CaseState; label?: string }) => <Badge tone={stateTone[state]}>{label ?? STATE_LABEL[state]}</Badge>;
-export const SyntheticBadge = () => <Badge tone="neutral" className="border-dashed">Synthetic demo data</Badge>;
-export const objectiveTone = (s: string): Tone => (s === "VERIFIED" ? "success" : s === "COMPLETED" ? "warning" : s === "BLOCKED" ? "danger" : s === "NOT_APPLICABLE" ? "neutral" : s === "IN_PROGRESS" ? "info" : "neutral");
-export const objectiveLabel = (s: string) => ({ VERIFIED: "Verified", COMPLETED: "Done — not yet verified", PENDING: "Not started", IN_PROGRESS: "In progress", BLOCKED: "Blocked", NOT_APPLICABLE: "Not applicable" })[s] ?? s;
+export const StateBadge = ({ state, label }: { state: CaseState; label?: string }) => (
+  <Badge tone={stateTone[state]}>{label ?? STATE_LABEL[state]}</Badge>
+);
+export const SyntheticBadge = () => (
+  <Badge tone="neutral" className="border-dashed">
+    Synthetic demo data
+  </Badge>
+);
+export const objectiveTone = (s: string): Tone =>
+  s === "VERIFIED"
+    ? "success"
+    : s === "COMPLETED"
+      ? "warning"
+      : s === "BLOCKED"
+        ? "danger"
+        : s === "NOT_APPLICABLE"
+          ? "neutral"
+          : s === "IN_PROGRESS"
+            ? "info"
+            : "neutral";
+export const objectiveLabel = (s: string) =>
+  ({
+    VERIFIED: "Verified",
+    COMPLETED: "Done — not yet verified",
+    PENDING: "Not started",
+    IN_PROGRESS: "In progress",
+    BLOCKED: "Blocked",
+    NOT_APPLICABLE: "Not applicable",
+  })[s] ?? s;
 
 /* ---------- Layout bits ---------- */
 export function Card({ className, ...p }: ComponentProps<"section">) {
-  return <section {...p} className={cn("rounded-lg border border-border bg-surface shadow-sm", className)} />;
+  return (
+    <section
+      {...p}
+      className={cn("min-w-0 rounded-lg border border-border bg-surface shadow-sm", className)}
+    />
+  );
 }
-export function CardHeader({ title, action, description, id }: { title: ReactNode; description?: ReactNode; action?: ReactNode; id?: string }) {
+export function CardHeader({
+  title,
+  action,
+  description,
+  id,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+  id?: string;
+}) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-5 py-4">
       <div>
-        <h2 id={id} className="t-h3">{title}</h2>
+        <h2 id={id} className="t-h3">
+          {title}
+        </h2>
         {description ? <p className="t-caption mt-0.5">{description}</p> : null}
       </div>
       {action}
     </div>
   );
 }
-export function PageHeader({ title, description, actions, eyebrow }: { title: ReactNode; description?: ReactNode; actions?: ReactNode; eyebrow?: ReactNode }) {
+export function PageHeader({
+  title,
+  description,
+  actions,
+  eyebrow,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  actions?: ReactNode;
+  eyebrow?: ReactNode;
+}) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
@@ -92,15 +216,34 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
     </div>
   );
 }
-export function Alert({ tone: t = "info", title, children }: { tone?: Tone; title?: string; children?: ReactNode }) {
+export function Alert({
+  tone: t = "info",
+  title,
+  children,
+}: {
+  tone?: Tone;
+  title?: string;
+  children?: ReactNode;
+}) {
   return (
-    <div role={t === "danger" ? "alert" : "status"} className={cn("rounded-md border px-4 py-3 text-sm", tone[t])}>
+    <div
+      role={t === "danger" ? "alert" : "status"}
+      className={cn("rounded-md border px-4 py-3 text-sm", tone[t])}
+    >
       {title ? <p className="font-semibold">{title}</p> : null}
       {children ? <div className={title ? "mt-1" : ""}>{children}</div> : null}
     </div>
   );
 }
-export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
+export function EmptyState({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children?: ReactNode;
+  action?: ReactNode;
+}) {
   return (
     <div className="flex flex-col items-center gap-2 px-6 py-12 text-center">
       <div aria-hidden className="mb-1 h-10 w-10 rounded-full border border-dashed border-border-strong" />
@@ -114,15 +257,35 @@ export function Progress({ value, max, label }: { value: number; max: number; la
   const pct = max ? Math.round((value / max) * 100) : 0;
   return (
     <div>
-      <div role="progressbar" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value} aria-label={label} className="h-2 overflow-hidden rounded-full bg-surface-3">
-        <div className="h-full rounded-full bg-success transition-[width] duration-500" style={{ width: `${pct}%` }} />
+      <div
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={max}
+        aria-valuenow={value}
+        aria-label={label}
+        className="h-2 overflow-hidden rounded-full bg-surface-3"
+      >
+        <div
+          className="h-full rounded-full bg-success transition-[width] duration-500"
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
 }
-export const Skeleton = ({ className }: { className?: string }) => <div aria-hidden className={cn("skeleton h-4", className)} />;
+export const Skeleton = ({ className }: { className?: string }) => (
+  <div aria-hidden className={cn("skeleton h-4", className)} />
+);
 
-export function DataTable({ caption, children, className }: { caption: string; children: ReactNode; className?: string }) {
+export function DataTable({
+  caption,
+  children,
+  className,
+}: {
+  caption: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <div className={cn("overflow-x-auto", className)} tabIndex={0} role="region" aria-label={caption}>
       <table className="w-full min-w-[640px] border-collapse text-left text-sm">
@@ -132,8 +295,17 @@ export function DataTable({ caption, children, className }: { caption: string; c
     </div>
   );
 }
-export const Th = ({ children, className }: { children?: ReactNode; className?: string }) => <th scope="col" className={cn("t-label whitespace-nowrap border-b border-border bg-surface-2 px-4 py-2.5", className)}>{children}</th>;
-export const Td = ({ children, className }: ComponentProps<"td">) => <td className={cn("border-b border-border px-4 py-3 align-top", className)}>{children}</td>;
+export const Th = ({ children, className }: { children?: ReactNode; className?: string }) => (
+  <th
+    scope="col"
+    className={cn("t-label whitespace-nowrap border-b border-border bg-surface-2 px-4 py-2.5", className)}
+  >
+    {children}
+  </th>
+);
+export const Td = ({ children, className }: ComponentProps<"td">) => (
+  <td className={cn("border-b border-border px-4 py-3 align-top", className)}>{children}</td>
+);
 
 /** Signature interaction. Rendered ONLY when the backend returned verification evidence. */
 export function VerifiedSeal({ label = "Verified" }: { label?: string }) {
@@ -148,10 +320,25 @@ export function VerifiedSeal({ label = "Verified" }: { label?: string }) {
 
 export function Money({ cents }: { cents: number | null | undefined }) {
   if (cents == null) return <span>—</span>;
-  return <span className="t-num">{(cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}</span>;
+  return (
+    <span className="t-num">
+      {(cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}
+    </span>
+  );
 }
 export function When({ at }: { at: Date | string | null | undefined }) {
   if (!at) return <span>—</span>;
   const d = new Date(at);
-  return <time dateTime={d.toISOString()} title={d.toISOString()} className="t-num">{d.toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC</time>;
+  return (
+    <time dateTime={d.toISOString()} title={d.toISOString()} className="t-num">
+      {d.toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "UTC",
+      })}{" "}
+      UTC
+    </time>
+  );
 }

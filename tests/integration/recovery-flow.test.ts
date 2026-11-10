@@ -1,8 +1,16 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { and, eq, sql } from "drizzle-orm";
-import { db, freshWorld, op, cust, acct, openRecoveryCase, caseState } from "../helpers";
+import { db, freshWorld, op, acct, openRecoveryCase, caseState } from "../helpers";
 import type { World } from "@/seed/world";
-import { actionReceipts, caseObjectives, outcomeLedger, simBillingReviews, simCharges, auditEvents, caseEvents } from "@/db/schema";
+import {
+  actionReceipts,
+  caseObjectives,
+  outcomeLedger,
+  simBillingReviews,
+  simCharges,
+  auditEvents,
+  caseEvents,
+} from "@/db/schema";
 import { actionsForCase, confirmAction, decideApproval, submitAction, verifyReceipt } from "@/domain/actions";
 import { verifyChain } from "@/domain/ledger";
 import { advance } from "@/workflows/engine";
@@ -13,7 +21,8 @@ beforeEach(async () => {
   w = await freshWorld();
 });
 
-const reqFor = (actions: Awaited<ReturnType<typeof actionsForCase>>, op: string) => actions.find((a) => a.operation === op)!;
+const reqFor = (actions: Awaited<ReturnType<typeof actionsForCase>>, op: string) =>
+  actions.find((a) => a.operation === op)!;
 
 describe("Scenario A+B — failed cancellation: discover, consent, correct once, review separately, partial resolution", () => {
   it("runs the whole story with truthful state at every step", async () => {
@@ -21,7 +30,10 @@ describe("Scenario A+B — failed cancellation: discover, consent, correct once,
 
     // workflow discovered the earlier request and the new charge, and stopped at consent — it did NOT act.
     expect(row.state).toBe("READY_FOR_ACTION");
-    expect(actions.map((a) => a.operation).sort()).toEqual(["subscription.correct_cancellation", "subscription.create_billing_review"]);
+    expect(actions.map((a) => a.operation).sort()).toEqual([
+      "subscription.correct_cancellation",
+      "subscription.create_billing_review",
+    ]);
     expect(actions.every((a) => a.status === "AWAITING_CONSENT")).toBe(true);
     const before = await acct(w.orgs.nf, "NF-100234");
     expect(before.status).toBe("ACTIVE"); // account remains active until consent
@@ -40,8 +52,12 @@ describe("Scenario A+B — failed cancellation: discover, consent, correct once,
     // case is NOT resolved: billing review + disposition outstanding → back to ready for the next step
     let c = await caseState(row.id);
     expect(c.state).toBe("READY_FOR_ACTION");
-    let objs = await getObjectives(db, w.orgs.nf, row.id);
-    expect(Object.fromEntries(objs.map((o) => [o.key, o.status]))).toEqual({ stop_future_billing: "VERIFIED", billing_review_submitted: "PENDING", charge_disposition: "PENDING" });
+    const objs = await getObjectives(db, w.orgs.nf, row.id);
+    expect(Object.fromEntries(objs.map((o) => [o.key, o.status]))).toEqual({
+      stop_future_billing: "VERIFIED",
+      billing_review_submitted: "PENDING",
+      charge_disposition: "PENDING",
+    });
 
     // 2) billing review (independent action, independently verified)
     const review = reqFor(await actionsForCase(db, ctx, row.id), "subscription.create_billing_review");
@@ -51,7 +67,10 @@ describe("Scenario A+B — failed cancellation: discover, consent, correct once,
     c = await caseState(row.id);
     expect(c.state).toBe("OUTCOME_PENDING_VERIFICATION"); // partial resolution — NOT resolved
     expect(c.closedAt).toBeNull();
-    const reviews = await db.select().from(simBillingReviews).where(eq(simBillingReviews.organizationId, w.orgs.nf));
+    const reviews = await db
+      .select()
+      .from(simBillingReviews)
+      .where(eq(simBillingReviews.organizationId, w.orgs.nf));
     expect(reviews).toHaveLength(1);
     expect(reviews[0].decision).toBeNull(); // review opened; nobody decided; no refund exists
     const [charge] = await db.select().from(simCharges).where(eq(simCharges.id, reviews[0].chargeId));
@@ -62,7 +81,16 @@ describe("Scenario A+B — failed cancellation: discover, consent, correct once,
     expect((await caseState(row.id)).state).toBe("OUTCOME_PENDING_VERIFICATION");
 
     // 3) the billing team's decision (human, operator-only) completes the last objective
-    const decision = await submitAction(db, op(w), { caseId: row.id, operation: "billing.record_review_decision", input: { accountNumber: "NF-100234", chargeId: reviews[0].chargeId, decision: "APPROVED_FOR_REFUND_PROCESSING" }, idempotencyKey: "decision-jordan-0001" }).catch((e) => e);
+    const decision = await submitAction(db, op(w), {
+      caseId: row.id,
+      operation: "billing.record_review_decision",
+      input: {
+        accountNumber: "NF-100234",
+        chargeId: reviews[0].chargeId,
+        decision: "APPROVED_FOR_REFUND_PROCESSING",
+      },
+      idempotencyKey: "decision-jordan-0001",
+    }).catch((e) => e);
     // case was not READY_FOR_ACTION so the gateway refuses until an operator readies it — safe default
     expect(decision).toBeInstanceOf(Error);
     expect((decision as Error).message).toMatch(/READY_FOR_ACTION/);
@@ -71,11 +99,28 @@ describe("Scenario A+B — failed cancellation: discover, consent, correct once,
   it("completes: operator readies the case, records the decision, and only then is it VERIFIED_RESOLVED with a valid ledger chain", async () => {
     const { ctx, row, actions } = await openRecoveryCase(w);
     await confirmAction(db, ctx, reqFor(actions, "subscription.correct_cancellation").id, true);
-    await confirmAction(db, ctx, reqFor(await actionsForCase(db, ctx, row.id), "subscription.create_billing_review").id, true);
+    await confirmAction(
+      db,
+      ctx,
+      reqFor(await actionsForCase(db, ctx, row.id), "subscription.create_billing_review").id,
+      true,
+    );
     const { transitionCase } = await import("@/domain/cases");
-    await transitionCase(db, op(w), row.id, { to: "READY_FOR_ACTION", message: "Ready to record the billing decision" });
+    await transitionCase(db, op(w), row.id, {
+      to: "READY_FOR_ACTION",
+      message: "Ready to record the billing decision",
+    });
     const [rv] = await db.select().from(simBillingReviews);
-    const res = await submitAction(db, op(w), { caseId: row.id, operation: "billing.record_review_decision", input: { accountNumber: "NF-100234", chargeId: rv.chargeId, decision: "APPROVED_FOR_REFUND_PROCESSING" }, idempotencyKey: "decision-jordan-0002" });
+    const res = await submitAction(db, op(w), {
+      caseId: row.id,
+      operation: "billing.record_review_decision",
+      input: {
+        accountNumber: "NF-100234",
+        chargeId: rv.chargeId,
+        decision: "APPROVED_FOR_REFUND_PROCESSING",
+      },
+      idempotencyKey: "decision-jordan-0002",
+    });
     expect(res.status).toBe("EXECUTED");
     expect(res.verification?.summary).toMatch(/does not move money/);
     const c = await caseState(row.id);
@@ -95,19 +140,27 @@ describe("Scenario A+B — failed cancellation: discover, consent, correct once,
     // receipts are independently verifiable; tampering is detected
     const [rcpt] = await db.select().from(actionReceipts).where(eq(actionReceipts.organizationId, w.orgs.nf));
     expect((await verifyReceipt(db, rcpt.receiptNo)).valid).toBe(true);
-    await db.update(actionReceipts).set({ result: { summary: "forged" } }).where(eq(actionReceipts.id, rcpt.id));
+    await db
+      .update(actionReceipts)
+      .set({ result: { summary: "forged" } })
+      .where(eq(actionReceipts.id, rcpt.id));
     expect((await verifyReceipt(db, rcpt.receiptNo)).valid).toBe(false);
 
     // audit trail has the full sequence
-    const audits = (await db.select().from(auditEvents).where(eq(auditEvents.organizationId, w.orgs.nf))).map((a) => a.action);
-    for (const a of ["case.create", "action.request", "action.consent", "action.execute", "case.transition"]) expect(audits).toContain(a);
+    const audits = (await db.select().from(auditEvents).where(eq(auditEvents.organizationId, w.orgs.nf))).map(
+      (a) => a.action,
+    );
+    for (const a of ["case.create", "action.request", "action.consent", "action.execute", "case.transition"])
+      expect(audits).toContain(a);
   });
 });
 
 describe("incorrect-success prevention", () => {
   it("cannot be moved to VERIFIED_RESOLVED without ledger evidence, even by direct SQL", async () => {
     const { row } = await openRecoveryCase(w);
-    await expect(db.execute(sql`update resolution_cases set state = 'VERIFIED_RESOLVED' where id = ${row.id}`)).rejects.toThrow(/verified outcome evidence|VERIFIED_RESOLVED/);
+    await expect(
+      db.execute(sql`update resolution_cases set state = 'VERIFIED_RESOLVED' where id = ${row.id}`),
+    ).rejects.toThrow(/verified outcome evidence|VERIFIED_RESOLVED/);
     expect((await caseState(row.id)).state).toBe("READY_FOR_ACTION");
   });
 
@@ -120,7 +173,12 @@ describe("incorrect-success prevention", () => {
     const cancel = reqFor(actions, "subscription.correct_cancellation");
     const key = sha256Hex(`${w.orgs.nf}:${cancel.id}`).slice(0, 32);
     // The provider already "processed" this key earlier (replay) but the account is still ACTIVE → read-after-write must catch it.
-    await db.insert(simOperations).values({ organizationId: w.orgs.nf, externalKey: key, operation: "correct_cancellation", result: { externalRef: "SUB-OP-GHOST", detail: { accountNumber: "NF-100234" }, replayed: false } });
+    await db.insert(simOperations).values({
+      organizationId: w.orgs.nf,
+      externalKey: key,
+      operation: "correct_cancellation",
+      result: { externalRef: "SUB-OP-GHOST", detail: { accountNumber: "NF-100234" }, replayed: false },
+    });
     const r = await confirmAction(db, ctx, cancel.id, true);
     expect(r.status).toBe("EXECUTED");
     expect(r.verification?.verified).toBe(false);
@@ -130,7 +188,10 @@ describe("incorrect-success prevention", () => {
     expect(c.state).toBe("ESCALATED");
     const objs = await getObjectives(db, w.orgs.nf, row.id);
     expect(objs.find((o) => o.key === "stop_future_billing")?.status).toBe("COMPLETED"); // executed, NOT verified
-    const [l] = await db.select().from(outcomeLedger).where(and(eq(outcomeLedger.caseId, row.id)));
+    const [l] = await db
+      .select()
+      .from(outcomeLedger)
+      .where(and(eq(outcomeLedger.caseId, row.id)));
     expect(l.finalOutcome).toBe("UNVERIFIED");
   });
 });
@@ -183,7 +244,11 @@ describe("objectives are independent (no single resolved boolean)", () => {
   it("tracks each objective's status separately", async () => {
     const { row } = await openRecoveryCase(w);
     const objs = await db.select().from(caseObjectives).where(eq(caseObjectives.caseId, row.id));
-    expect(objs.map((o) => o.key).sort()).toEqual(["billing_review_submitted", "charge_disposition", "stop_future_billing"]);
+    expect(objs.map((o) => o.key).sort()).toEqual([
+      "billing_review_submitted",
+      "charge_disposition",
+      "stop_future_billing",
+    ]);
     expect(objs.every((o) => o.status === "PENDING")).toBe(true);
   });
 });

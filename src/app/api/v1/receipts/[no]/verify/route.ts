@@ -13,6 +13,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ no: 
     await rateLimit(db, `receipt:${sha256Hex(ip).slice(0, 16)}`, 60, 60);
     if (!/^RCPT-\d{8}-[A-F0-9]{8}$/.test(no)) return json({ valid: false }, 404);
     const r = await verifyReceipt(db, no);
-    return r.valid ? json({ valid: true, receipt: { receiptNo: r.receipt.receiptNo, operation: r.receipt.operation, issuedAt: r.receipt.issuedAt } }) : json({ valid: false }, 404);
+    return r.valid
+      ? json({
+          valid: true,
+          receipt: {
+            receiptNo: r.receipt.receiptNo,
+            operation: r.receipt.operation,
+            issuedAt: r.receipt.issuedAt,
+          },
+        })
+      : json({ valid: false }, 404);
   });
 }

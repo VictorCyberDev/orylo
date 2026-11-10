@@ -18,7 +18,11 @@ export async function planCatalog(db: DbOrTx) {
 export async function billingOverview(db: DbOrTx, ctx: Ctx) {
   if (ctx.actor.type !== "operator") throw forbidden();
   requirePermission(ctx.actor.role, "billing.read");
-  const [sub] = await db.select({ s: subscriptions, p: plans }).from(subscriptions).innerJoin(plans, eq(plans.id, subscriptions.planId)).where(eq(subscriptions.organizationId, ctx.orgId));
+  const [sub] = await db
+    .select({ s: subscriptions, p: plans })
+    .from(subscriptions)
+    .innerJoin(plans, eq(plans.id, subscriptions.planId))
+    .where(eq(subscriptions.organizationId, ctx.orgId));
   if (!sub) throw notFound("Subscription");
   const periodStart = sub.s.currentPeriodStart;
   const usage = await db
@@ -26,32 +30,89 @@ export async function billingOverview(db: DbOrTx, ctx: Ctx) {
     .from(usageRecords)
     .where(and(eq(usageRecords.organizationId, ctx.orgId), gte(usageRecords.occurredAt, periodStart)))
     .groupBy(usageRecords.metric);
-  const [{ ops }] = await db.select({ ops: sql<number>`count(*)::int` }).from(memberships).where(and(eq(memberships.organizationId, ctx.orgId), eq(memberships.status, "active")));
-  const [{ keys }] = await db.select({ keys: sql<number>`count(*)::int` }).from(apiKeys).where(and(eq(apiKeys.organizationId, ctx.orgId), sql`${apiKeys.revokedAt} is null`));
-  const inv = await db.select().from(invoices).where(eq(invoices.organizationId, ctx.orgId)).orderBy(desc(invoices.periodStart));
+  const [{ ops }] = await db
+    .select({ ops: sql<number>`count(*)::int` })
+    .from(memberships)
+    .where(and(eq(memberships.organizationId, ctx.orgId), eq(memberships.status, "active")));
+  const [{ keys }] = await db
+    .select({ keys: sql<number>`count(*)::int` })
+    .from(apiKeys)
+    .where(and(eq(apiKeys.organizationId, ctx.orgId), sql`${apiKeys.revokedAt} is null`));
+  const inv = await db
+    .select()
+    .from(invoices)
+    .where(eq(invoices.organizationId, ctx.orgId))
+    .orderBy(desc(invoices.periodStart));
   const used = Object.fromEntries(usage.map((u) => [u.metric, u.qty]));
   const ent = sub.p.entitlements;
   return {
-    subscription: { status: sub.s.status, provider: sub.s.provider, trialEndsAt: sub.s.trialEndsAt, currentPeriodEnd: sub.s.currentPeriodEnd, cancelledAt: sub.s.cancelledAt, testMode: true as const },
-    plan: { key: sub.p.key, name: sub.p.name, priceCentsMonthly: sub.p.priceCentsMonthly, experimental: sub.p.experimental, entitlements: ent },
-    usage: { verifiedOutcomes: used.verified_outcome ?? 0, casesOpened: used.case_opened ?? 0, actionsExecuted: used.action_executed ?? 0, members: ops, apiKeys: keys },
+    subscription: {
+      status: sub.s.status,
+      provider: sub.s.provider,
+      trialEndsAt: sub.s.trialEndsAt,
+      currentPeriodEnd: sub.s.currentPeriodEnd,
+      cancelledAt: sub.s.cancelledAt,
+      testMode: true as const,
+    },
+    plan: {
+      key: sub.p.key,
+      name: sub.p.name,
+      priceCentsMonthly: sub.p.priceCentsMonthly,
+      experimental: sub.p.experimental,
+      entitlements: ent,
+    },
+    usage: {
+      verifiedOutcomes: used.verified_outcome ?? 0,
+      casesOpened: used.case_opened ?? 0,
+      actionsExecuted: used.action_executed ?? 0,
+      members: ops,
+      apiKeys: keys,
+    },
     limits: {
       verifiedOutcomesRemaining: Math.max(0, ent.includedVerifiedOutcomes - (used.verified_outcome ?? 0)),
       membersRemaining: Math.max(0, ent.maxOperators - ops),
     },
-    invoices: inv.map((i) => ({ id: i.id, periodStart: i.periodStart, periodEnd: i.periodEnd, amountCents: i.amountCents, status: i.status, testMode: i.testMode })),
+    invoices: inv.map((i) => ({
+      id: i.id,
+      periodStart: i.periodStart,
+      periodEnd: i.periodEnd,
+      amountCents: i.amountCents,
+      status: i.status,
+      testMode: i.testMode,
+    })),
   };
 }
 
-export async function assertEntitlement(db: DbOrTx, orgId: string, feature: "apiAccess" | "customBranding" | "member") {
-  const [sub] = await db.select({ s: subscriptions, p: plans }).from(subscriptions).innerJoin(plans, eq(plans.id, subscriptions.planId)).where(eq(subscriptions.organizationId, orgId));
-  if (!sub || sub.s.status === "cancelled") throw new AppError("FORBIDDEN", "This organization's subscription is not active");
+export async function assertEntitlement(
+  db: DbOrTx,
+  orgId: string,
+  feature: "apiAccess" | "customBranding" | "member",
+) {
+  const [sub] = await db
+    .select({ s: subscriptions, p: plans })
+    .from(subscriptions)
+    .innerJoin(plans, eq(plans.id, subscriptions.planId))
+    .where(eq(subscriptions.organizationId, orgId));
+  if (!sub || sub.s.status === "cancelled")
+    throw new AppError("FORBIDDEN", "This organization's subscription is not active");
   const e = sub.p.entitlements;
-  if (feature === "apiAccess" && !e.apiAccess) throw new AppError("FORBIDDEN", `Your plan (${sub.p.name}) does not include API access. Upgrade to enable it.`);
-  if (feature === "customBranding" && !e.customBranding) throw new AppError("FORBIDDEN", `Your plan (${sub.p.name}) does not include custom branding.`);
+  if (feature === "apiAccess" && !e.apiAccess)
+    throw new AppError(
+      "FORBIDDEN",
+      `Your plan (${sub.p.name}) does not include API access. Upgrade to enable it.`,
+    );
+  if (feature === "customBranding" && !e.customBranding)
+    throw new AppError("FORBIDDEN", `Your plan (${sub.p.name}) does not include custom branding.`);
   if (feature === "member") {
-    const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(memberships).where(and(eq(memberships.organizationId, orgId), eq(memberships.status, "active")));
-    if (n >= e.maxOperators) throw new AppError("FORBIDDEN", `Your plan (${sub.p.name}) allows ${e.maxOperators} team members. Upgrade to add more.`);
+    const [{ n }] = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(memberships)
+      .where(and(eq(memberships.organizationId, orgId), eq(memberships.status, "active")));
+    if (n >= e.maxOperators)
+      throw new AppError(
+        "FORBIDDEN",
+        `Your plan (${sub.p.name}) allows ${e.maxOperators} team members. Upgrade to add more.`,
+      );
   }
 }
 
@@ -65,12 +126,31 @@ export async function changePlan(db: DbOrTx, ctx: Ctx, planKey: string) {
     const end = new Date(now.getTime() + 30 * 86_400_000);
     const [s] = await tx
       .update(subscriptions)
-      .set({ planId: p.id, status: p.priceCentsMonthly === 0 ? "trialing" : "active", currentPeriodStart: now, currentPeriodEnd: end, cancelledAt: null })
+      .set({
+        planId: p.id,
+        status: p.priceCentsMonthly === 0 ? "trialing" : "active",
+        currentPeriodStart: now,
+        currentPeriodEnd: end,
+        cancelledAt: null,
+      })
       .where(eq(subscriptions.organizationId, ctx.orgId))
       .returning();
     if (p.priceCentsMonthly > 0)
-      await tx.insert(invoices).values({ organizationId: ctx.orgId, subscriptionId: s.id, periodStart: now, periodEnd: end, amountCents: p.priceCentsMonthly, status: "test_paid", testMode: true });
-    await audit(tx, ctx, { action: "billing.plan_change", targetType: "subscription", targetId: s.id, metadata: { plan: planKey, testMode: true } });
+      await tx.insert(invoices).values({
+        organizationId: ctx.orgId,
+        subscriptionId: s.id,
+        periodStart: now,
+        periodEnd: end,
+        amountCents: p.priceCentsMonthly,
+        status: "test_paid",
+        testMode: true,
+      });
+    await audit(tx, ctx, {
+      action: "billing.plan_change",
+      targetType: "subscription",
+      targetId: s.id,
+      metadata: { plan: planKey, testMode: true },
+    });
     return s;
   });
 }
@@ -78,7 +158,11 @@ export async function changePlan(db: DbOrTx, ctx: Ctx, planKey: string) {
 export async function cancelSubscription(db: DbOrTx, ctx: Ctx) {
   if (ctx.actor.type !== "operator") throw forbidden();
   requirePermission(ctx.actor.role, "billing.manage");
-  const [s] = await db.update(subscriptions).set({ status: "cancelled", cancelledAt: new Date() }).where(eq(subscriptions.organizationId, ctx.orgId)).returning();
+  const [s] = await db
+    .update(subscriptions)
+    .set({ status: "cancelled", cancelledAt: new Date() })
+    .where(eq(subscriptions.organizationId, ctx.orgId))
+    .returning();
   await audit(db, ctx, { action: "billing.cancel", targetType: "subscription", targetId: s.id });
   return s;
 }
