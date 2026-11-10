@@ -92,6 +92,7 @@ test.describe("keyboard & focus", () => {
     page,
   }) => {
     await login(page, "ana@northfield.example", /\/app$/);
+    await page.waitForLoadState("networkidle"); // hydrated: the shortcut handler is attached after hydration
     await page.keyboard.press("Control+k");
     const box = page.getByRole("combobox", { name: "Search pages and actions" });
     await expect(box).toBeFocused();

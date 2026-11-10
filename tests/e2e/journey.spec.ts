@@ -83,6 +83,8 @@ test.describe("Scenario C/F in the browser", () => {
     await login(page, "marcus.bell@customer.example", /\/portal$/);
     const res = await page.goto("/portal/cases/ORY-1001");
     expect(res?.status()).toBe(404);
+    await expect(page.getByText("We can't find that page")).toBeVisible();
+    await expect(page.getByText("I cancelled but was charged again")).toHaveCount(0); // no data from the other customer's case
     await context.clearCookies();
     await page.goto("/app");
     await expect(page).toHaveURL(/\/sign-in/);
