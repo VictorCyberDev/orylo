@@ -1,5 +1,7 @@
 import { Check, Clock, FileText, LifeBuoy, Mail, Phone, ShieldAlert } from "lucide-react";
 import type { CaseView } from "@/domain/case-view";
+import { allowedTargets } from "@/domain/case-machine";
+import type { CaseState } from "@/db/schema";
 import { brand } from "@/config/brand";
 import {
   Alert,
@@ -281,8 +283,17 @@ export function Timeline({ view, audience }: { view: CaseView; audience: "custom
   );
 }
 
-export function HumanSupport({ caseRef, existing }: { caseRef: string; existing: CaseView["escalations"] }) {
+export function HumanSupport({
+  caseRef,
+  existing,
+  canEscalate = true,
+}: {
+  caseRef: string;
+  existing: CaseView["escalations"];
+  canEscalate?: boolean;
+}) {
   const open = existing.filter((e) => ["OPEN", "ACKNOWLEDGED", "IN_PROGRESS"].includes(e.status));
+  if (!canEscalate && open.length === 0) return null; // never offer a step that is illegal in this state
   return (
     <Card aria-labelledby="hs-h">
       <CardHeader
@@ -497,7 +508,7 @@ export function ReopenOrFeedback({ view, caseRef }: { view: CaseView; caseRef: s
         </ActionForm>
       </Card>
     );
-  if (!["REOPENED"].includes(st))
+  if (allowedTargets(st as CaseState, "customer").includes("CANCELLED"))
     return (
       <div className="flex justify-end">
         <ActionForm action={cancelCaseAction}>

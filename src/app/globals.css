@@ -20,9 +20,9 @@
   --surface-3: #e5e9e4;
   --fg: #111e2c;
   --fg-muted: #4a5866;
-  --fg-subtle: #6a7784;
-  --border: #d9dfd8;
-  --border-strong: #b9c3bb;
+  --fg-subtle: #5d6a76;
+  --border: #d9dfd8; /* decorative dividers only */
+  --border-strong: #6f7b72; /* ≥3:1 on surfaces: input/button boundaries (WCAG 1.4.11) */
   --focus: #0b6b57;
   --selection: #cfeee5;
   --active: #e3f6f0;
@@ -67,7 +67,7 @@
   --fg-muted: #b3c0cb;
   --fg-subtle: #8fa0ae;
   --border: #25384a;
-  --border-strong: #38526a;
+  --border-strong: #6c89a5;
   --focus: #a2eedb;
   --selection: #1d4a44;
   --active: #16352f;
@@ -111,7 +111,7 @@
     --fg-muted: #b3c0cb;
     --fg-subtle: #8fa0ae;
     --border: #25384a;
-    --border-strong: #38526a;
+    --border-strong: #6c89a5;
     --focus: #a2eedb;
     --selection: #1d4a44;
     --active: #16352f;

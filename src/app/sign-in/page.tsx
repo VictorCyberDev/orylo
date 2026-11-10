@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Sign in", robots: { index: false } }
 export default async function SignIn({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; email?: string }>;
+  searchParams: Promise<{ next?: string; email?: string; expired?: string }>;
 }) {
   const sp = await searchParams;
   return (
@@ -25,6 +25,14 @@ export default async function SignIn({
         </>
       }
     >
+      {sp.expired ? (
+        <p
+          role="status"
+          className="mb-4 rounded-md border border-warning/30 bg-warning-bg px-3 py-2 text-sm text-warning"
+        >
+          That access link has expired or is no longer valid. Sign in, or ask for a new link.
+        </p>
+      ) : null}
       <SignInForm next={sp.next} email={sp.email} />
     </AuthShell>
   );

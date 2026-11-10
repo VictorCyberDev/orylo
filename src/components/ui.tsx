@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ComponentProps, ReactNode } from "react";
+import { cloneElement, isValidElement, type ComponentProps, type ReactElement, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import type { CaseState } from "@/db/schema";
 import { STATE_LABEL } from "@/domain/case-machine";
@@ -70,7 +70,14 @@ export function Field({
         ) : null}
         {required ? <span className="sr-only"> (required)</span> : null}
       </label>
-      {children}
+      {isValidElement(children)
+        ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+            "aria-describedby":
+              [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") ||
+              undefined,
+            ...(error ? { "aria-invalid": true } : {}),
+          })
+        : children}
       {hint ? (
         <p id={`${id}-hint`} className="t-caption">
           {hint}

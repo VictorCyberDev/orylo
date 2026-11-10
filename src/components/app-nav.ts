@@ -6,6 +6,7 @@ interface Item {
   href: string;
   label: string;
   perm?: Permission;
+  anyOf?: Permission[];
   group: "Work" | "Admin";
   keywords?: string;
 }
@@ -58,7 +59,7 @@ export const NAV: Item[] = [
   {
     href: "/app/admin/workflows",
     label: "Workflows",
-    perm: "workflow.write",
+    anyOf: ["workflow.write", "workflow.publish"],
     group: "Admin",
     keywords: "authoring versions publish",
   },
@@ -86,7 +87,8 @@ export const NAV: Item[] = [
     keywords: "billing invoices upgrade",
   },
 ];
-export const navFor = (role: OrgRole) => NAV.filter((n) => !n.perm || can(role, n.perm));
+export const navFor = (role: OrgRole) =>
+  NAV.filter((n) => (!n.perm || can(role, n.perm)) && (!n.anyOf || n.anyOf.some((p) => can(role, p))));
 export const commandsFor = (role: OrgRole): Command[] =>
   navFor(role).map((n) => ({
     id: n.href.replace(/\W+/g, "-"),

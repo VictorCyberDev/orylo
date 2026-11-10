@@ -104,7 +104,16 @@ export const getCustomer = cache(async (): Promise<CustomerSession | null> => {
         org: { id: g.o.id, name: g.o.name },
         via: "grant",
         caseScope: g.g.caseId,
-        ctx: { orgId: g.o.id, actor: { type: "customer", id: `grant:${g.g.id}`, customerId: g.c.id } },
+        ctx: {
+          orgId: g.o.id,
+          actor: {
+            type: "customer",
+            id: `grant:${g.g.id}`,
+            customerId: g.c.id,
+            readOnly: g.g.issuedVia === "operator" || !g.g.scopes.includes("case:act"),
+            caseScope: g.g.caseId,
+          },
+        },
       };
   }
   return null;

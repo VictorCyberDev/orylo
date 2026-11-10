@@ -1,13 +1,15 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { caseEvidence, resolutionCases } from "@/db/schema";
 import type { DbOrTx } from "@/db";
 import { AppError, notFound } from "./errors";
-import type { Ctx } from "./context";
+import { assertCanAct, type Ctx } from "./context";
 import { appendEvent, assertCaseAccess, lockCase } from "./cases";
 import { sha256Hex } from "./crypto";
 import { audit } from "./audit";
 
 export const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
+export const MAX_FILES_PER_CASE = 10;
+export const MAX_BYTES_PER_CASE = 10 * 1024 * 1024;
 const ALLOWED: Record<string, { ext: string[]; magic?: (b: Buffer) => boolean }> = {
   "image/png": {
     ext: [".png"],
@@ -50,10 +52,23 @@ export async function addEvidence(
   file: { filename: string; contentType: string; bytes: Buffer },
   note?: string,
 ) {
+  assertCanAct(ctx.actor);
   const v = validateUpload(file.filename, file.contentType, file.bytes);
   return db.transaction(async (tx) => {
     const c = await lockCase(tx, ctx, caseRef);
     assertCaseAccess(ctx, c, ctx.actor.type === "operator");
+    const [q] = await tx
+      .select({
+        n: sql<number>`count(*)::int`,
+        bytes: sql<number>`coalesce(sum(${caseEvidence.sizeBytes}), 0)::int`,
+      })
+      .from(caseEvidence)
+      .where(and(eq(caseEvidence.caseId, c.id), eq(caseEvidence.organizationId, ctx.orgId)));
+    if (q.n >= MAX_FILES_PER_CASE || q.bytes + file.bytes.length > MAX_BYTES_PER_CASE)
+      throw new AppError(
+        "VALIDATION",
+        `This case already has the maximum evidence (${MAX_FILES_PER_CASE} files / 10 MB).`,
+      );
     const [row] = await tx
       .insert(caseEvidence)
       .values({
@@ -116,6 +131,6 @@ export async function getEvidenceFile(db: DbOrTx, ctx: Ctx, evidenceId: string) 
     .from(resolutionCases)
     .where(and(eq(resolutionCases.id, e.caseId), eq(resolutionCases.organizationId, ctx.orgId)));
   if (!c) throw notFound("Evidence");
-  assertCaseAccess(ctx, c);
+  assertCaseAccess(ctx, { ...c, id: e.caseId });
   return e;
 }

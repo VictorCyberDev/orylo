@@ -95,6 +95,14 @@ export const WorkflowSpecSchema = z
     if (ids.size !== s.nodes.length) ctx.addIssue({ code: "custom", message: "duplicate node ids" });
     if (!ids.has(s.start)) ctx.addIssue({ code: "custom", message: `start node ${s.start} does not exist` });
     const objs = new Set(s.objectives.map((o) => o.key));
+    for (const n of s.nodes)
+      if (n.type === "collect_info")
+        for (const f of n.fields)
+          if (f.type === "choice" && !f.options?.length)
+            ctx.addIssue({
+              code: "custom",
+              message: `field ${f.key} in node ${n.id} is a choice but has no options`,
+            });
     const refs = (n: WorkflowNode): string[] => {
       switch (n.type) {
         case "lookup":

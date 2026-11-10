@@ -69,10 +69,7 @@ export function KeyForm() {
       </Field>
       <fieldset className="space-y-1">
         <legend className="text-sm font-medium">Scopes</legend>
-        {[
-          ["egain:actions", "eGain action API (sessions, confirm, escalate)"],
-          ["cases:read", "Read case status"],
-        ].map(([v, l]) => (
+        {[["egain:actions", "eGain action API (sessions, confirm, escalate)"]].map(([v, l]) => (
           <label key={v} className="flex min-h-11 items-center gap-2 text-sm">
             <input
               type="checkbox"

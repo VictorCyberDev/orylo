@@ -71,3 +71,23 @@ If the owner chooses to show Orylo's own console alongside, it must be labelled 
 - Do not log the bearer key or the customer token.
 - The API must not reveal whether an account exists on failed verification.
 - Never accept a client-supplied price, amount or date as authority; the server decides eligibility from the policy rules.
+
+## Implementation notes — known differences between `openapi.yaml` and the implemented routes
+
+`openapi.yaml` was authored from the agreed contract before the routes existed. A later code-reading review found the
+differences below; the implementation (`src/app/api/v1/**`, exercised by `tests/e2e/egain-api.spec.ts`) is the
+behaviour that is actually tested. **Branch on `error.code`, not on HTTP status.** No test loads the YAML, so drift is not
+detected automatically.
+
+| Topic | OpenAPI says | Implementation does |
+|---|---|---|
+| Wrong/other customer's token on a case | 403 | 401 for an invalid/expired token; 404 when the token is valid but belongs to another customer |
+| `GET /receipts/{no}/verify`, unknown or malformed number | 200 `{valid:false}` | 404 `{valid:false}` |
+| Receipt number format | (not fixed) | `RCPT-YYYYMMDD-` + 16 hex digits |
+| Second escalation while one is open | 409 | 200 with the same `escalationId` (idempotent) |
+| `DUPLICATE` confirm response | includes `verification` | `verification: null` |
+| `Idempotency-Key` header | deduplicates | required and audited only; replay safety comes from the action id in the gateway |
+| `caseState` examples | `IN_PROGRESS` | not a real state — real values are the 14 case states in `src/domain/case-machine.ts` |
+| Validation errors | 400 | 400 (aligned) · CONSENT_REQUIRED / APPROVAL_REQUIRED / POLICY_DENIED = 422 (aligned) |
+| Rate limits | unspecified | 120 requests/min per API key; 6 session attempts/10 min per key+email; `Retry-After` on 429 |
+| Unexpected errors | unspecified | 500 `{error:{code:"INTERNAL"}}` |

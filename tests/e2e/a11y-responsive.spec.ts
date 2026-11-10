@@ -81,7 +81,7 @@ test.describe("accessibility (axe, WCAG 2.2 AA tags) — light and dark", () => 
 });
 
 test.describe("keyboard & focus", () => {
-  test("skip link is first and visible on focus; dialog traps focus and returns it", async ({ page }) => {
+  test("skip link is first in tab order and visible on focus", async ({ page }) => {
     await page.goto("/");
     await page.keyboard.press("Tab");
     const skip = page.getByRole("link", { name: "Skip to main content" });

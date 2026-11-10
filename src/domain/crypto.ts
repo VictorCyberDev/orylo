@@ -4,9 +4,15 @@ export const sha256Hex = (s: string | Buffer) => createHash("sha256").update(s).
 
 export function signingKey(): string {
   const k = process.env.RECEIPT_SIGNING_KEY;
-  if (k) return k;
-  if (process.env.NODE_ENV === "production") throw new Error("RECEIPT_SIGNING_KEY must be set in production");
-  return "dev-only-receipt-signing-key";
+  if (process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== "phase-production-build") {
+    // Fail BEFORE any side effect: a missing/placeholder key must not be discovered after a provider mutation.
+    if (!k || k.length < 32 || /change-me|dev-only|example/i.test(k))
+      throw new Error(
+        "RECEIPT_SIGNING_KEY must be set to a random value of at least 32 characters in production",
+      );
+    return k;
+  }
+  return k || "dev-only-receipt-signing-key";
 }
 
 export const hmacHex = (data: string, key = signingKey()) =>

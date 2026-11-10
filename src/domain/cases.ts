@@ -11,7 +11,7 @@ import {
 } from "@/db/schema";
 import type { DbOrTx } from "@/db";
 import { AppError, forbidden, notFound } from "./errors";
-import { actorCustomerId, actorKind, type Ctx } from "./context";
+import { actorCustomerId, actorKind, assertCanAct, type Ctx } from "./context";
 import { canTransition } from "./case-machine";
 import { requirePermission } from "./rbac";
 import { audit } from "./audit";
@@ -38,7 +38,7 @@ export interface CreateCaseInput {
 /** Cases are only visible to (a) staff with case.read in the org, (b) the owning customer, (c) the engine. */
 export function assertCaseAccess(
   ctx: Ctx,
-  row: Pick<CaseRow, "organizationId" | "customerId">,
+  row: Pick<CaseRow, "organizationId" | "customerId"> & { id?: string },
   write = false,
 ) {
   if (row.organizationId !== ctx.orgId) throw notFound("Case");
@@ -46,6 +46,7 @@ export function assertCaseAccess(
   if (a.type === "operator") return requirePermission(a.role, write ? "case.write" : "case.read");
   if (a.type === "customer" || a.type === "channel") {
     if (a.customerId !== row.customerId) throw notFound("Case"); // do not reveal existence
+    if (a.type === "customer" && a.caseScope && row.id && a.caseScope !== row.id) throw notFound("Case");
     return;
   }
 }
@@ -106,6 +107,7 @@ export async function appendEvent(
 }
 
 export async function createCase(db: DbOrTx, ctx: Ctx, input: CreateCaseInput): Promise<CaseRow> {
+  assertCanAct(ctx.actor);
   if (ctx.actor.type === "operator") requirePermission(ctx.actor.role, "case.write");
   const cid = actorCustomerId(ctx.actor);
   if (cid && cid !== input.customerId) throw forbidden("You can only open cases for yourself");
@@ -179,6 +181,7 @@ export interface TransitionOptions {
 }
 
 export async function transitionCase(db: DbOrTx, ctx: Ctx, caseIdOrRef: string, opt: TransitionOptions) {
+  assertCanAct(ctx.actor);
   try {
     return await db.transaction(async (tx) => {
       const row = await lockCase(tx, ctx, caseIdOrRef);
@@ -328,6 +331,7 @@ export async function addNote(
   message: string,
   visibility: "internal" | "customer" = "internal",
 ) {
+  assertCanAct(ctx.actor);
   if (ctx.actor.type === "operator") requirePermission(ctx.actor.role, "notes.write");
   else if (visibility === "internal") throw forbidden("Only staff can add internal notes");
   return db.transaction(async (tx) => {
@@ -498,6 +502,8 @@ export async function listCases(db: DbOrTx, ctx: Ctx, f: CaseFilters = {}) {
   const where: (SQL | undefined)[] = [eq(resolutionCases.organizationId, ctx.orgId)];
   if (ctx.actor.type === "operator") requirePermission(ctx.actor.role, "case.read");
   const cid = actorCustomerId(ctx.actor);
+  if (ctx.actor.type === "customer" && ctx.actor.caseScope)
+    where.push(eq(resolutionCases.id, ctx.actor.caseScope));
   if (cid) where.push(eq(resolutionCases.customerId, cid));
   else if (ctx.actor.type !== "operator" && ctx.actor.type !== "system") throw forbidden();
   if (f.states?.length) where.push(inArray(resolutionCases.state, f.states));

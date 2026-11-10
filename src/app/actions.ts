@@ -1,15 +1,24 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { logError } from "@/lib/log";
+import { clientIp } from "@/lib/ip";
 import { ZodError } from "zod";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { customers, memberships, notifications, type CaseState, type OrgRole } from "@/db/schema";
+import {
+  actionRequests,
+  customers,
+  memberships,
+  notifications,
+  type CaseState,
+  type OrgRole,
+} from "@/db/schema";
 import { getAuth } from "@/auth/auth";
-import { getCustomer, getStaff } from "@/auth/session";
+import { getCustomer, getStaff, GRANT_COOKIE } from "@/auth/session";
 import { AppError, forbidden } from "@/domain/errors";
 import type { Ctx } from "@/domain/context";
-import { actorCustomerId } from "@/domain/context";
+import { actorCustomerId, assertCanAct } from "@/domain/context";
 import {
   addNote,
   appendEvent,
@@ -26,6 +35,7 @@ import { escalateCase, resolveEscalation, takeOwnership } from "@/domain/escalat
 import { addEvidence } from "@/domain/uploads";
 import { submitLead } from "@/domain/leads";
 import { markRead } from "@/domain/notifications";
+import { rateLimit } from "@/domain/rate-limit";
 import * as admin from "@/domain/admin";
 import { changePlan, cancelSubscription } from "@/domain/billing";
 import {
@@ -36,6 +46,7 @@ import {
   submitForReview,
 } from "@/domain/policy";
 import { audit } from "@/domain/audit";
+import { requirePermission } from "@/domain/rbac";
 import type { ActionResult } from "@/components/client";
 import type { SimMode } from "@/adapters/subscription";
 
@@ -66,7 +77,7 @@ async function guard(fn: () => Promise<Out>): R {
       String((e as { digest: unknown }).digest).startsWith("NEXT_")
     )
       throw e;
-    console.error("[action error]", e);
+    logError("[action error]", e);
     return { ok: false, error: "Something went wrong on our side. Nothing was changed. Please try again." };
   }
 }
@@ -80,6 +91,7 @@ async function staffCtx(): Promise<Ctx> {
 async function customerCtx(): Promise<Ctx> {
   const c = await getCustomer();
   if (!c) throw new AppError("UNAUTHENTICATED", "Please sign in again.");
+  assertCanAct(c.ctx.actor); // operator-issued links are read-only
   return { ...c.ctx, requestId: crypto.randomUUID() };
 }
 /** Whoever is signed in: staff or customer. Used for actions both audiences share (e.g. upload evidence). */
@@ -160,6 +172,7 @@ export async function signOutAction() {
   await getAuth()
     .api.signOut({ headers: await headers() })
     .catch(() => undefined);
+  (await cookies()).delete(GRANT_COOKIE);
   revalidatePath("/", "layout");
 }
 export async function requestPasswordResetAction(_p: ActionResult, fd: FormData): R {
@@ -194,7 +207,7 @@ export async function resetPasswordAction(_p: ActionResult, fd: FormData): R {
 export async function leadAction(_p: ActionResult, fd: FormData): R {
   return guard(async () => {
     const h = await headers();
-    const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const ip = clientIp(h);
     await submitLead(db, Object.fromEntries(fd.entries()), { ip });
     return { message: "Thanks — we'll be in touch." };
   });
@@ -225,6 +238,7 @@ export async function openCaseAction(_p: ActionResult, fd: FormData): R {
     const wf = WORKFLOWS[key];
     if (!wf) throw new AppError("VALIDATION", "Please choose what happened.");
     const cid = actorCustomerId(ctx.actor)!;
+    await rateLimit(db, `open-case:${cid}`, 10, 3600); // quota: 10 new cases per hour per customer
     const row = await openWorkflowCase(db, ctx, {
       workflowKey: key,
       customerId: cid,
@@ -241,7 +255,12 @@ export async function confirmActionAction(_p: ActionResult, fd: FormData): R {
     const ctx = await customerCtx();
     const consent = str(fd, "consent") === "yes";
     const r = await confirmAction(db, ctx, str(fd, "requestId"), consent);
-    await advance(db, ctx, str(fd, "caseRef"));
+    // Derive the case from the request itself — never from a client-supplied reference.
+    const [reqRow] = await db
+      .select({ caseId: actionRequests.caseId })
+      .from(actionRequests)
+      .where(and(eq(actionRequests.id, str(fd, "requestId")), eq(actionRequests.organizationId, ctx.orgId)));
+    if (reqRow) await advance(db, ctx, reqRow.caseId);
     if (r.status === "DECLINED")
       return { message: "Okay — nothing was changed. You can still ask for a person." };
     if (r.status === "AWAITING_APPROVAL")
@@ -252,7 +271,7 @@ export async function confirmActionAction(_p: ActionResult, fd: FormData): R {
     if (r.status === "FAILED")
       throw new AppError(
         "ADAPTER_FAILURE",
-        `We couldn't complete that (${r.failure?.code}). Nothing was reported as done${r.failure?.retriable ? " — it's safe to try again" : "; a person will review it"}.`,
+        `We couldn't complete that. Nothing was reported as done${r.failure?.retriable ? " — it's safe to try again" : "; a person will review it"}.`,
       );
     if (r.status === "EXECUTED" && r.verification && !r.verification.verified)
       return {
@@ -500,6 +519,7 @@ export async function advanceAction(_p: ActionResult, fd: FormData): R {
   return guard(async () => {
     const ctx = await staffCtx();
     if (ctx.actor.type !== "operator") throw forbidden();
+    requirePermission(ctx.actor.role, "case.write");
     const r = await advance(db, ctx, str(fd, "caseRef"));
     return { message: `Workflow: ${r.status}` };
   });
@@ -525,17 +545,20 @@ export async function issuePortalLinkAction(
     const { issueAccessGrant } = await import("@/domain/channel");
     const { findCase } = await import("@/domain/cases");
     const c = await findCase(db, ctx, str(fd, "caseId"));
+    // READ-ONLY by construction: staff may share a view of a case, never a credential that can consent for the customer.
     const { token } = await issueAccessGrant(db, {
       orgId: ctx.orgId,
       customerId: c.customerId,
       caseId: c.id,
       via: "operator",
       ttlMinutes: 60 * 24,
+      scopes: ["case:read"],
     });
     await audit(db, ctx, { action: "grant.issue", targetType: "case", targetId: c.id });
     return {
       data: `/portal/access/${token}`,
-      message: "Approved case-access link created (valid 24 hours).",
+      message:
+        "Read-only case link created (valid 24 hours). The customer must sign in to confirm or change anything.",
     };
   });
   return { ...r, link: (r as { data?: string }).data };

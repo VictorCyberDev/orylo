@@ -211,7 +211,7 @@ test.describe.serial("eGain action API contract", () => {
     request,
   }) => {
     expect((await request.get("/api/v1/receipts/not-a-receipt/verify")).status()).toBe(404);
-    const r = await request.get("/api/v1/receipts/RCPT-20260101-DEADBEEF/verify");
+    const r = await request.get("/api/v1/receipts/RCPT-20260101-DEADBEEFDEADBEEF/verify");
     expect(r.status()).toBe(404);
     expect(await r.json()).toEqual({ valid: false });
   });

@@ -1,4 +1,5 @@
 import type { OrgRole } from "@/db/schema";
+import { AppError } from "./errors";
 
 /**
  * Every domain call receives a Ctx. `orgId` is mandatory and is applied to EVERY query, so tenant
@@ -11,7 +12,7 @@ import type { OrgRole } from "@/db/schema";
  */
 export type Actor =
   | { type: "operator"; id: string; role: OrgRole }
-  | { type: "customer"; id: string; customerId: string }
+  | { type: "customer"; id: string; customerId: string; readOnly?: boolean; caseScope?: string | null }
   | { type: "channel"; id: string; customerId: string; keyId?: string }
   | { type: "system"; id: string }
   | { type: "integration"; id: string };
@@ -36,3 +37,15 @@ export const actorKind = (a: Actor): "customer" | "operator" | "system" =>
     : a.type === "system" || a.type === "integration"
       ? "system"
       : "customer";
+
+/**
+ * Customer actors created from an operator-issued access link are READ-ONLY: staff must never be able to
+ * mint a credential that can consent on a customer's behalf.
+ */
+export function assertCanAct(a: Actor) {
+  if (a.type === "customer" && a.readOnly)
+    throw new AppError(
+      "FORBIDDEN",
+      "This access link is read-only. Please sign in to confirm or change anything.",
+    );
+}

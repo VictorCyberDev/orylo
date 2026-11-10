@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { AppError } from "@/domain/errors";
+import { logError } from "@/lib/log";
 import { ZodError } from "zod";
 import { db } from "@/db";
 import { authenticateApiKey } from "@/domain/admin";
@@ -37,7 +38,7 @@ export async function handle(req: NextRequest, fn: (requestId: string) => Promis
         400,
         { "x-request-id": requestId },
       );
-    console.error("[api error]", requestId, e);
+    logError("[api error]", e, { requestId });
     return json({ error: { code: "INTERNAL", message: "Unexpected error" } }, 500, {
       "x-request-id": requestId,
     });

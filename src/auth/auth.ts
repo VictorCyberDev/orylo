@@ -7,9 +7,15 @@ const isProd = process.env.NODE_ENV === "production";
 
 function secret() {
   const s = process.env.BETTER_AUTH_SECRET;
-  if (s && s.length >= 32) return s;
-  if (isProd) throw new Error("BETTER_AUTH_SECRET (>=32 chars) must be set in production");
-  return "dev-only-secret-dev-only-secret-dev-only-secret";
+  const building = process.env.NEXT_PHASE === "phase-production-build"; // enforced at runtime, not while building
+  if (isProd && !building) {
+    if (!s || s.length < 32 || /change-me|dev-only|example/i.test(s))
+      throw new Error(
+        "BETTER_AUTH_SECRET must be a random value of at least 32 characters in production (not a placeholder)",
+      );
+    return s;
+  }
+  return s && s.length >= 32 ? s : "dev-only-secret-dev-only-secret-dev-only-secret";
 }
 
 /**

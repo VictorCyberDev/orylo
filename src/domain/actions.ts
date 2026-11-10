@@ -27,7 +27,7 @@ import {
 import type { DbOrTx } from "@/db";
 import { db as rootDb } from "@/db";
 import { AppError, forbidden, notFound, type ErrorCode } from "./errors";
-import { actorCustomerId, systemCtx, type Ctx } from "./context";
+import { actorCustomerId, assertCanAct, systemCtx, type Ctx } from "./context";
 import {
   appendEvent,
   assertCaseAccess,
@@ -39,7 +39,7 @@ import {
 } from "./cases";
 import { activeRules, isVersionCurrent } from "./policy";
 import { appendLedger } from "./ledger";
-import { canonicalJson, hmacHex, safeEqualHex, sha256Hex } from "./crypto";
+import { canonicalJson, hmacHex, safeEqualHex, sha256Hex, signingKey } from "./crypto";
 import { requirePermission } from "./rbac";
 import { audit } from "./audit";
 import { notifyCustomer, notifyRoles } from "./notifications";
@@ -78,6 +78,8 @@ interface Verification {
   summary: string;
 }
 interface OpDef {
+  /** Internal ops write inside the gateway transaction and must NOT be abandoned by a timeout race. */
+  internal?: boolean;
   label: string;
   schema: z.ZodType<Record<string, unknown>>;
   objectiveKey: string;
@@ -92,6 +94,7 @@ interface OpDef {
 
 const denied = (m: string, d?: Record<string, unknown>) => new AppError("POLICY_DENIED", m, d);
 const DAY = 86_400_000;
+const CONSENT_TTL_MS = 72 * 3_600_000; // a confirmation is valid for 72 hours
 
 async function ownedAccount(rc: RunCtx) {
   const acct = await rc.provider.readAccount(rc.orgId, rc.input.accountNumber);
@@ -220,7 +223,12 @@ export const OPERATIONS: Record<string, OpDef> = {
     async assess(rc) {
       if (rc.rules["refund.automatic_refund_allowed"] !== false)
         throw denied("Policy configuration is unsafe: automatic refunds must be disallowed.");
-      await ownedAccount(rc);
+      const acct = await ownedAccount(rc);
+      // The charge must belong to THIS case's account — never decide another customer's review.
+      const ch = (await rc.provider.readCharges(rc.orgId, acct.accountId)).find(
+        (c) => c.id === rc.input.chargeId,
+      );
+      if (!ch) throw notFound("Charge");
       const rv = await rc.provider.readBillingReview(rc.orgId, rc.input.chargeId);
       if (!rv) throw new AppError("STALE_STATE", "There is no billing review to decide for this charge.");
       if (rv.status === "DECIDED") throw new AppError("STALE_STATE", "This review has already been decided.");
@@ -249,6 +257,7 @@ export const OPERATIONS: Record<string, OpDef> = {
   },
 
   "internal.create_reschedule_request": {
+    internal: true,
     label: "Ask the scheduling team for a new appointment",
     schema: z
       .object({
@@ -297,6 +306,7 @@ export const OPERATIONS: Record<string, OpDef> = {
   },
 
   "internal.confirm_reschedule": {
+    internal: true,
     label: "Record the confirmed new appointment",
     schema: z.object({ newSlot: z.string().min(5).max(120) }).strict(),
     objectiveKey: "new_appointment_confirmed",
@@ -342,6 +352,7 @@ export const OPERATIONS: Record<string, OpDef> = {
   },
 
   "internal.assemble_claim_packet": {
+    internal: true,
     label: "Assemble your warranty claim packet",
     schema: z
       .object({
@@ -642,6 +653,8 @@ export async function requestAction(db: DbOrTx, ctx: Ctx, i: RequestActionInput)
               eq(actionRequests.idempotencyKey, i.idempotencyKey),
             ),
           );
+        if (!again || again.caseId !== caseRow.id || again.operation !== i.operation)
+          throw new AppError("CONFLICT", "This idempotency key was already used for a different request");
         return { request: again, created: false as const };
       }
       await appendEvent(tx, ctx, caseRow.id, {
@@ -684,6 +697,7 @@ export async function requestAction(db: DbOrTx, ctx: Ctx, i: RequestActionInput)
 
 // ---------------------------------------------------------------- consent & approval
 export async function grantConsent(db: DbOrTx, ctx: Ctx, requestId: string, granted: boolean) {
+  assertCanAct(ctx.actor);
   if (ctx.actor.type !== "customer" && ctx.actor.type !== "channel")
     throw forbidden("Only the customer can give or decline consent");
   const probe = await loadRequest(db, ctx.orgId, requestId);
@@ -704,7 +718,15 @@ export async function grantConsent(db: DbOrTx, ctx: Ctx, requestId: string, gran
             eq(actionApprovals.organizationId, ctx.orgId),
           ),
         );
-      if (prior) return { request: req, decision: prior.decision, duplicate: true as const };
+      if (prior) {
+        // A recorded answer is final: "no" after "yes" must never run the action, and "yes" after "no" must not resurrect it.
+        if ((prior.decision === "GRANTED") !== granted)
+          throw new AppError(
+            "CONFLICT",
+            "You've already answered this step. To change your mind, ask for a person.",
+          );
+        return { request: req, decision: prior.decision, duplicate: true as const };
+      }
       if (req.status !== "AWAITING_CONSENT")
         throw new AppError("CONFLICT", `Request is ${req.status}; consent can no longer be recorded`);
 
@@ -934,8 +956,12 @@ async function recordDenial(ctx: Ctx, requestId: string, e: AppError) {
         const row = await lockCase(tx, systemCtx(ctx.orgId), req.caseId);
         await appendEvent(tx, systemCtx(ctx.orgId, "action-gateway"), row.id, {
           type: "action.refused",
-          message: e.message,
-          payload: { requestId, code: e.code },
+          // Customer-visible text is fixed and safe; the detailed reason (may name internal rule keys) stays in the payload.
+          message:
+            e.code === "STALE_STATE" || e.code === "POLICY_STALE"
+              ? "Something changed after you confirmed, so nothing was done. We'll ask you to confirm again."
+              : "We can't carry this out automatically. A person will look at it.",
+          payload: { requestId, code: e.code, detail: e.message },
         });
       });
     }
@@ -945,6 +971,7 @@ async function recordDenial(ctx: Ctx, requestId: string, e: AppError) {
 }
 
 async function runExecute(tx: DbOrTx, ctx: Ctx, requestId: string): Promise<ExecutionResult> {
+  signingKey(); // fail fast on a bad production key, before any provider side effect
   const probe = await loadRequest(tx, ctx.orgId, requestId);
   const op = OPERATIONS[probe.operation];
   if (!op) throw new AppError("UNSUPPORTED", "Unknown operation");
@@ -989,8 +1016,15 @@ async function runExecute(tx: DbOrTx, ctx: Ctx, requestId: string): Promise<Exec
     .select()
     .from(actionApprovals)
     .where(and(eq(actionApprovals.actionRequestId, req.id), eq(actionApprovals.organizationId, ctx.orgId)));
-  if (op.customerConsent && !approvals.some((a) => a.approverType === "customer" && a.decision === "GRANTED"))
+  const consent = approvals.find((a) => a.approverType === "customer" && a.decision === "GRANTED");
+  if (op.customerConsent && !consent)
     throw new AppError("CONSENT_REQUIRED", "The customer has not confirmed this step", { requestId: req.id });
+  if (op.customerConsent && consent && Date.now() - consent.createdAt.getTime() > CONSENT_TTL_MS)
+    throw new AppError(
+      "CONSENT_REQUIRED",
+      "Your confirmation has expired. Please review and confirm again.",
+      { requestId: req.id },
+    );
   const { rules } = await authority(tx, ctx.orgId, op);
   const threshold = await effectiveApprovalThreshold(tx, ctx.orgId, rules);
   if (
@@ -1069,13 +1103,15 @@ async function runExecute(tx: DbOrTx, ctx: Ctx, requestId: string): Promise<Exec
 
   let result: MutationResult;
   try {
-    result = await withTimeout(op.run(rc, assessment), actionTimeoutMs());
+    result = op.internal
+      ? await op.run(rc, assessment)
+      : await withTimeout(op.run(rc, assessment), actionTimeoutMs());
   } catch (err) {
     return handleFailure(tx, ctx, op, caseRow, req, attempt.id, attemptNo, err, rules);
   }
 
   // ---- success of the CALL (not yet of the OUTCOME)
-  const receiptNo = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${sha256Hex(`${req.id}`).slice(0, 8).toUpperCase()}`;
+  const receiptNo = `RCPT-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${sha256Hex(`${req.id}`).slice(0, 16).toUpperCase()}`;
   const safeResult = {
     summary: op.label,
     status: result.replayed ? "ALREADY_APPLIED" : "APPLIED",

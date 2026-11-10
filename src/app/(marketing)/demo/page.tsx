@@ -9,7 +9,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/demo" },
 };
 
-const demoOn = process.env.DEMO_MODE !== "false";
+export const dynamic = "force-dynamic"; // read DEMO_MODE at request time, never baked in at build
+// OFF unless explicitly enabled: publishing the shared demo password must be a deliberate choice.
+const demoOn = () => process.env.DEMO_MODE === "true";
 const people = [
   {
     who: "Jordan Reyes",
@@ -72,7 +74,7 @@ export default function Demo() {
           provider and never move money.
         </p>
       </header>
-      {!demoOn ? (
+      {!demoOn() ? (
         <Alert tone="info" title="Demo credentials are switched off in this deployment">
           Set <code className="t-code">DEMO_MODE=true</code> to display them.{" "}
           <Link href="/contact" className="underline">

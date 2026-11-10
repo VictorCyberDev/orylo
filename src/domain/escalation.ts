@@ -11,7 +11,7 @@ import {
 } from "@/db/schema";
 import type { DbOrTx } from "@/db";
 import { AppError, forbidden, notFound } from "./errors";
-import { actorCustomerId, type Ctx } from "./context";
+import { actorCustomerId, assertCanAct, type Ctx } from "./context";
 import { appendEvent, assertCaseAccess, getObjectives, lockCase, transitionCase } from "./cases";
 import { requirePermission } from "./rbac";
 import { audit } from "./audit";
@@ -100,6 +100,7 @@ async function queueId(tx: DbOrTx, orgId: string, key?: string) {
 
 /** Create a real escalation record (status + queue + owner) and move the case to ESCALATED. */
 export async function escalateCase(db: DbOrTx, ctx: Ctx, caseIdOrRef: string, input: EscalateInput) {
+  assertCanAct(ctx.actor);
   if (!input.reason.trim()) throw new AppError("VALIDATION", "A reason is required");
   return db.transaction(async (tx) => {
     const row = await lockCase(tx, ctx, caseIdOrRef);
@@ -137,8 +138,13 @@ export async function escalateCase(db: DbOrTx, ctx: Ctx, caseIdOrRef: string, in
         await transitionCase(tx, ctx, row.id, {
           to: "ESCALATED",
           type: "case.escalated",
-          message: `Passed to a person: ${input.reason.slice(0, 300)}`,
-          payload: { escalationId: esc.id, reasonCode: input.reasonCode, channel: input.channel ?? "queue" },
+          message: "Passed to a person, with everything we know so far.", // reason stays internal (payload/escalation record)
+          payload: {
+            escalationId: esc.id,
+            reasonCode: input.reasonCode,
+            channel: input.channel ?? "queue",
+            reason: input.reason.slice(0, 300),
+          },
         });
       }
       await tx

@@ -41,6 +41,10 @@ npm run db:seed                       # synthetic orgs, users, policy pack, prov
 npm run dev                           # http://localhost:3000  → /demo lists the accounts
 ```
 
+> `npm run dev` accepts the placeholder secrets in `.env.example`. `npm start` (production mode) and the
+> Playwright suite **refuse** placeholder/short secrets — put random values in `.env.local`
+> (`openssl rand -base64 32` for `BETTER_AUTH_SECRET` and `RECEIPT_SIGNING_KEY`). `/demo` credentials show only when `DEMO_MODE=true`.
+
 Demo password for every seeded user: `OryloDemo!2026` (shown on `/demo` only while `DEMO_MODE` is not `false`).
 Reset to a clean synthetic world any time: `npm run demo:reset`.
 

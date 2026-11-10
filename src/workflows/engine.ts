@@ -17,7 +17,7 @@ import {
 import type { DbOrTx } from "@/db";
 import { db as rootDb } from "@/db";
 import { AppError, forbidden, notFound } from "@/domain/errors";
-import { actorCustomerId, systemCtx, type Ctx } from "@/domain/context";
+import { actorCustomerId, assertCanAct, systemCtx, type Ctx } from "@/domain/context";
 import {
   assertCaseAccess,
   createCase,
@@ -212,6 +212,7 @@ export async function advance(db: DbOrTx, ctx: Ctx, caseIdOrRef: string) {
   const sys = systemCtx(ctx.orgId, "workflow-engine");
   return db.transaction(async (tx) => {
     const caseRow = await lockCase(tx, sys, caseIdOrRef);
+    assertCaseAccess(ctx, caseRow); // the CALLER must be allowed to see this case, not just the engine
     const [exec] = await tx
       .select()
       .from(workflowExecutions)
@@ -468,6 +469,7 @@ export async function provideInfo(
   caseIdOrRef: string,
   answers: Record<string, unknown>,
 ) {
+  assertCanAct(ctx.actor);
   const a = ctx.actor;
   if (a.type === "operator") {
     if (a.role === "analyst") throw forbidden();
@@ -512,7 +514,7 @@ export async function provideInfo(
     await appendEvent(tx, ctx, caseRow.id, {
       type: "info.provided",
       message: "You provided the requested details.",
-      payload: { keys: Object.keys(answers) },
+      payload: { keys: node.fields.map((f) => f.key).filter((k) => answers[k] !== undefined) },
     });
     return caseRow.id;
   });

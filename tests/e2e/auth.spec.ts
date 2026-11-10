@@ -59,4 +59,15 @@ test.describe("authentication & session lifecycle", () => {
     await page.goto("/portal");
     await expect(page).toHaveURL(/\/sign-in/); // staff accounts are not customers
   });
+
+  test("public self-registration is closed (invitation-only) so accounts cannot be created or enumerated", async ({
+    request,
+  }) => {
+    const r = await request.post("/api/auth/sign-up/email", {
+      headers: { origin: "http://localhost:3000" },
+      data: { email: "sam.okafor@customer.example", password: "a-very-long-password-1", name: "Mallory" },
+    });
+    expect(r.status()).toBe(403);
+    expect(await r.text()).not.toMatch(/already exists/i);
+  });
 });

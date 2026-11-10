@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { requireStaff } from "@/auth/session";
 import { db } from "@/db";
 import { listWorkflows } from "@/domain/admin";
@@ -9,7 +10,8 @@ import { Badge, Card, CardHeader, DataTable, PageHeader, Td, Th, When } from "@/
 import { workflowPublishAction } from "../../../actions";
 export const metadata: Metadata = { title: "Workflows" };
 export default async function Workflows({ searchParams }: { searchParams: Promise<{ edit?: string }> }) {
-  const s = await requireStaff("workflow.write");
+  const s = await requireStaff();
+  if (!can(s.role, "workflow.write") && !can(s.role, "workflow.publish")) redirect("/app?denied=1");
   const sp = await searchParams;
   const rows = await listWorkflows(db, s.ctx);
   const target = rows.find((r) => r.v.id === sp.edit) ?? rows.find((r) => r.v.status === "PUBLISHED");

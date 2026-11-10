@@ -94,7 +94,14 @@ describe("Authorized policy answers & refusal behaviour", () => {
     const { row } = await openRecoveryCase(w);
     expect(row.state).toBe("ESCALATED");
     const ev = await db.select().from(caseEvents).where(eq(caseEvents.caseId, row.id));
-    expect(ev.some((e) => /contradict/i.test(e.message ?? ""))).toBe(true);
+    // the detailed reason is internal (payload); the customer-visible text never names internal rule keys
+    const esc = ev.find((e) => e.type === "case.escalated")!;
+    expect((esc.payload as { reason: string }).reason).toMatch(/contradict/i);
+    expect(
+      ev
+        .filter((e) => e.visibility === "customer")
+        .every((e) => !/billing\.review|rule/i.test(e.message ?? "")),
+    ).toBe(true);
   });
 
   it("policy supersession: a request authorised under an old version is refused as stale", async () => {

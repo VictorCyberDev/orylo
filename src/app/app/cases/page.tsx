@@ -33,6 +33,12 @@ type SP = {
   page?: string;
   sort?: string;
 };
+function validDate(v?: string, suffix = "") {
+  if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return undefined;
+  const d = new Date(v + suffix);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
+
 export default async function CasesPage({ searchParams }: { searchParams: Promise<SP> }) {
   const s = await requireStaff("case.read");
   const sp = await searchParams;
@@ -44,11 +50,13 @@ export default async function CasesPage({ searchParams }: { searchParams: Promis
   const res = await listCases(db, s.ctx, {
     q: sp.q,
     states,
-    priority: sp.priority ? [sp.priority as "low"] : undefined,
+    priority: ["low", "normal", "high", "urgent"].includes(sp.priority ?? "")
+      ? [sp.priority as "low"]
+      : undefined,
     assigneeUserId: sp.assignee,
     category: sp.category || undefined,
-    from: sp.from ? new Date(sp.from) : undefined,
-    to: sp.to ? new Date(sp.to + "T23:59:59Z") : undefined,
+    from: validDate(sp.from),
+    to: validDate(sp.to, "T23:59:59Z"),
     limit,
     offset: (page - 1) * limit,
     sort: (sp.sort as "updated") || "updated",

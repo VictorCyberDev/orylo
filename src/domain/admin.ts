@@ -150,6 +150,8 @@ export async function deactivateMember(db: DbOrTx, ctx: Ctx, userId: string) {
       .where(and(eq(memberships.organizationId, ctx.orgId), eq(memberships.userId, userId)))
       .for("update");
     if (!m) throw notFound("Member");
+    if (m.role === "owner" && a.role !== "owner")
+      throw new AppError("FORBIDDEN", "Only an owner can deactivate an owner");
     if (m.role === "owner") await assertAnotherOwner(tx, ctx.orgId, userId);
     await tx.update(memberships).set({ status: "inactive" }).where(eq(memberships.id, m.id));
     await tx
@@ -164,6 +166,7 @@ export async function createInvitation(db: DbOrTx, ctx: Ctx, email: string, role
   const a = staff(ctx);
   requirePermission(a.role, "members.manage");
   z.string().email().parse(email);
+  if (!orgRole.enumValues.includes(role)) throw new AppError("VALIDATION", "Unknown role");
   if (role === "owner" && a.role !== "owner")
     throw new AppError("FORBIDDEN", "Only an owner can invite an owner");
   await assertEntitlement(db, ctx.orgId, "member");
@@ -234,7 +237,7 @@ export async function listInvitations(db: DbOrTx, ctx: Ctx) {
 }
 
 // ------------------------------------------------------------------ API keys
-export const API_SCOPES = ["egain:actions", "cases:read"] as const;
+export const API_SCOPES = ["egain:actions"] as const;
 export async function createApiKey(db: DbOrTx, ctx: Ctx, name: string, scopes: string[]) {
   const a = staff(ctx);
   requirePermission(a.role, "apikeys.manage");

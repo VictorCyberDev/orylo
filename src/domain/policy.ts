@@ -51,6 +51,39 @@ export function scanForInjection(sections: Section[]): number[] {
   );
 }
 
+/** Known rule keys and their types. Unknown keys must be namespaced `custom.`. A malformed value is never trusted. */
+export const RULE_TYPES: Record<string, "boolean" | "number"> = {
+  "cancellation.correction_allowed": "boolean",
+  "cancellation.correction_window_days": "number",
+  "billing.review_allowed": "boolean",
+  "billing.review_window_days": "number",
+  "billing.duplicate_charge_window_hours": "number",
+  "billing.review_approval_threshold_cents": "number",
+  "refund.automatic_refund_allowed": "boolean",
+  "identity.required_factors": "number",
+  "consent.required_for_account_changes": "boolean",
+  "escalation.max_failed_attempts": "number",
+  "failure.retry_with_same_key": "boolean",
+  "data.retention_days": "number",
+  "service.reschedule_allowed": "boolean",
+  "warranty.coverage_months": "number",
+};
+export function ruleValueValid(key: string, v: unknown): boolean {
+  const t = RULE_TYPES[key];
+  if (!t) return key.startsWith("custom.");
+  return typeof v === t && (t !== "number" || (Number.isFinite(v as number) && (v as number) >= 0));
+}
+export function validateRules(rules: Record<string, unknown>) {
+  const bad = Object.entries(rules)
+    .filter(([k, v]) => !ruleValueValid(k, v))
+    .map(([k]) => k);
+  if (bad.length)
+    throw new AppError(
+      "VALIDATION",
+      `Invalid or unknown rule(s): ${bad.join(", ")}. Known keys are typed; custom rules must start with "custom.".`,
+    );
+}
+
 export interface PolicyDraftInput {
   documentKey: string;
   title?: string;
@@ -65,6 +98,7 @@ export interface PolicyDraftInput {
 export async function createPolicyVersion(db: DbOrTx, ctx: Ctx, input: PolicyDraftInput) {
   if (ctx.actor.type !== "operator") throw new AppError("FORBIDDEN", "Only staff can author policy");
   requirePermission(ctx.actor.role, "policy.write");
+  validateRules(input.rules ?? {});
   return db.transaction(async (tx) => {
     let [doc] = await tx
       .select()
@@ -251,7 +285,9 @@ export async function activeRules(db: DbOrTx, orgId: string, at = new Date()): P
   const seen = new Map<string, { value: string | number | boolean; versionId: string; document: string }[]>();
   for (const { v, d } of act)
     for (const [k, val] of Object.entries(v.rules))
-      seen.set(k, [...(seen.get(k) ?? []), { value: val, versionId: v.id, document: d.key }]);
+      if (ruleValueValid(k, val))
+        // malformed values are dropped → authority missing → refuse/escalate (fail closed)
+        seen.set(k, [...(seen.get(k) ?? []), { value: val, versionId: v.id, document: d.key }]);
   const rules: ActiveRules["rules"] = {};
   const sources: Record<string, string> = {};
   const conflicts: ActiveRules["conflicts"] = [];
