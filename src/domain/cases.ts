@@ -134,13 +134,16 @@ export async function createCase(db: DbOrTx, ctx: Ctx, input: CreateCaseInput): 
         synthetic: input.synthetic ?? true,
       })
       .returning();
-    for (const o of input.objectives ?? []) {
+    // Staggered created_at preserves the workflow's objective order for display.
+    const base = Date.now();
+    for (const [i, o] of (input.objectives ?? []).entries()) {
       await tx.insert(caseObjectives).values({
         organizationId: ctx.orgId,
         caseId: row.id,
         key: o.key,
         label: o.label,
         required: o.required ?? true,
+        createdAt: new Date(base + i),
       });
     }
     await appendEvent(tx, ctx, row.id, {

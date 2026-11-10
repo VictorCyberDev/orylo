@@ -1,3 +1,4 @@
+import "./env";
 import { pool } from "../src/db";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { db } from "../src/db";

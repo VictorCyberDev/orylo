@@ -1,0 +1,673 @@
+openapi: 3.1.0
+info:
+  title: Orylo eGain Action API
+  version: 1.0.0
+  summary: HTTP actions that an eGain AI Agent calls on Orylo, the independent backend.
+  description: |
+    Contract for the Failed Cancellation & Billing Recovery hackathon agent.
+    All data is synthetic (fictional provider "Northfield Digital").
+
+    Status of this document: written by the project as the contract for the engineer who is implementing
+    the API. It has not been run against a live server, and has not been imported into an eGain tenant.
+
+    Authentication has two layers on every /api/v1/egain/* call:
+    1. `Authorization: Bearer <ORYLO_API_KEY>`, an Orylo-issued key with scope `egain:actions`, stored in
+       eGain's connector or secret store and never placed in knowledge content.
+    2. `X-Customer-Token`, an opaque token returned by POST /sessions after identity verification. It
+       expires after 30 minutes and must never be shown to the customer.
+
+    Branch on the `error.code` in the response body. The HTTP status codes shown below are a proposed
+    mapping that the implementing engineer must confirm.
+servers:
+  - url: https://{host}
+    description: Replace with the deployed Orylo host. Placeholder only.
+    variables:
+      host:
+        default: ORYLO_HOST
+        description: Placeholder. No deployed host exists in this package.
+tags:
+  - name: Session
+  - name: Case
+  - name: Action
+  - name: Escalation
+  - name: Receipt
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/egain/sessions:
+    post:
+      tags: [Session]
+      operationId: createSession
+      summary: Verify identity and open or resume the case
+      description: |
+        Verifies email and account number against the synthetic provider (two factors, per the identity
+        policy). On success opens, or resumes, the customer's existing open case for the same workflow,
+        runs the diagnosis, and returns a short-lived customer token. On failure to verify, returns
+        HTTP 200 with `verified: false` and never discloses whether an account exists.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionRequest'
+            examples:
+              jordan:
+                summary: Jordan Reyes (both actions available)
+                value:
+                  fullName: Jordan Reyes
+                  email: jordan.reyes@customer.example
+                  accountNumber: NF-100234
+                  issue: 'Cancellation was not applied: I asked to cancel nine days ago and was charged again.'
+      responses:
+        '200':
+          description: Verification result.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SessionVerified'
+                  - $ref: '#/components/schemas/SessionNotVerified'
+              examples:
+                verified:
+                  value:
+                    verified: true
+                    caseReference: ORY-1042
+                    customerToken: opaque-token-expires-in-30-minutes
+                    state: READY_FOR_ACTION
+                    summary: Earlier cancellation request found; account still active; one recent charge.
+                notVerified:
+                  value:
+                    verified: false
+                    message: We couldn't verify those details. You can try again or ask for a person.
+        '400':
+          $ref: '#/components/responses/Validation'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/egain/cases/{caseReference}:
+    get:
+      tags: [Case]
+      operationId: getCase
+      summary: Read the case, findings, proposed actions, ledger and escalations
+      security:
+        - bearerAuth: []
+          customerToken: []
+      parameters:
+        - $ref: '#/components/parameters/CaseReference'
+      responses:
+        '200':
+          description: Current case.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Case'
+              examples:
+                jordan:
+                  value:
+                    caseReference: ORY-1042
+                    state: READY_FOR_ACTION
+                    stateLabel: Ready for your confirmation
+                    findings:
+                      priorCancellationFound: true
+                      priorCancellationAt: '2026-11-01T10:15:00Z'
+                      accountStillActive: true
+                      disputedCharge:
+                        amountCents: 2999
+                        chargedAt: '2026-11-07T00:00:00Z'
+                        description: Monthly plan
+                    objectives:
+                      - key: stop_future_billing
+                        label: Future billing stopped (cancellation applied)
+                        status: PENDING
+                      - key: billing_review_submitted
+                        label: Billing review opened for the charge
+                        status: PENDING
+                      - key: charge_disposition
+                        label: Billing team decision on the charge
+                        status: PENDING
+                    proposedActions:
+                      - actionId: 3f2c1d3e-7b0a-4f5e-9a41-0b6c8f2d1e11
+                        operation: subscription.correct_cancellation
+                        label: Apply your earlier cancellation
+                        consentText: Apply the cancellation you asked for on the date you requested it.
+                        needsApproval: false
+                        status: PROPOSED
+                      - actionId: 9a6d2b7c-2e44-4c8d-8a0b-5d1f7e3c4a22
+                        operation: subscription.create_billing_review
+                        label: Open a billing review
+                        consentText: Open a billing review of the disputed charge. This does not refund or reverse anything by itself.
+                        needsApproval: false
+                        status: PROPOSED
+                    ledger: []
+                    escalations: []
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/egain/cases/{caseReference}/actions/{actionId}/confirm:
+    post:
+      tags: [Action]
+      operationId: confirmAction
+      summary: Confirm or decline one proposed action
+      description: |
+        `consent: true` must be sent only after the customer has explicitly said yes to the exact
+        `consentText` of this action. `consent: false` records a decline and changes nothing.
+        The `Idempotency-Key` makes retries safe: repeating the same key never applies the action twice.
+        Use the eGain session id and the actionId, for example `<egainSessionId>-<actionId>`.
+      security:
+        - bearerAuth: []
+          customerToken: []
+      parameters:
+        - $ref: '#/components/parameters/CaseReference'
+        - name: actionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 120
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmRequest'
+            examples:
+              yes:
+                value:
+                  consent: true
+              no:
+                value:
+                  consent: false
+      responses:
+        '200':
+          description: Result of the confirmation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmResult'
+              examples:
+                executed:
+                  summary: Executed and verified
+                  value:
+                    status: EXECUTED
+                    receiptNo: EXAMPLE-RECEIPT-0001
+                    verification:
+                      verified: true
+                      summary: The account shows as cancelled effective the original request date.
+                    caseState: IN_PROGRESS
+                    message: Your cancellation has been applied.
+                awaitingApproval:
+                  summary: Charge over $50.00, awaiting a team member
+                  value:
+                    status: AWAITING_APPROVAL
+                    receiptNo: null
+                    verification: null
+                    caseState: AWAITING_APPROVAL
+                    message: A team member must approve this review before it is opened.
+                declined:
+                  value:
+                    status: DECLINED
+                    receiptNo: null
+                    verification: null
+                    caseState: READY_FOR_ACTION
+                    message: No changes were made.
+                duplicate:
+                  value:
+                    status: DUPLICATE
+                    receiptNo: EXAMPLE-RECEIPT-0001
+                    verification:
+                      verified: true
+                      summary: This step was already applied.
+                    caseState: IN_PROGRESS
+                    message: This step was already applied; nothing changed a second time.
+        '400':
+          $ref: '#/components/responses/Validation'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ConflictOrStale'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/egain/cases/{caseReference}/escalations:
+    post:
+      tags: [Escalation]
+      operationId: createEscalation
+      summary: Record a callback request or email follow-up
+      description: |
+        The two demonstration escalation options. Each creates a tracked escalation record with an owner
+        queue. Contact details shown to customers are demonstration details only.
+      security:
+        - bearerAuth: []
+          customerToken: []
+      parameters:
+        - $ref: '#/components/parameters/CaseReference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EscalationRequest'
+            examples:
+              callback:
+                value:
+                  channel: callback_request
+                  reason: 'Callback, window tomorrow morning. Described: Cancellation was not applied. Checked: identity verified; earlier cancellation found. Tried: cancellation correction. Failed: billing review failed twice. Confirmed by customer: cancellation correction.'
+      responses:
+        '200':
+          description: Escalation recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EscalationResult'
+              examples:
+                opened:
+                  value:
+                    escalationId: 7c1e5a90-3b2d-4e6f-8f10-2a9d4b6c8e33
+                    status: OPEN
+                    channel: callback_request
+                    message: Your callback request has been recorded and passed to the support queue.
+        '400':
+          $ref: '#/components/responses/Validation'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/ConflictOrStale'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/receipts/{receiptNo}/verify:
+    get:
+      tags: [Receipt]
+      operationId: verifyReceipt
+      summary: Check that a receipt is genuine
+      description: No authentication. Returns only the receipt number, operation and issue time.
+      security: []
+      parameters:
+        - name: receiptNo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Verification result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptVerification'
+              examples:
+                valid:
+                  value:
+                    valid: true
+                    receipt:
+                      receiptNo: EXAMPLE-RECEIPT-0001
+                      operation: subscription.correct_cancellation
+                      issuedAt: '2026-11-10T13:00:00Z'
+                invalid:
+                  value:
+                    valid: false
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Orylo-issued API key with scope `egain:actions`. Keep in eGain's secret store.
+    customerToken:
+      type: apiKey
+      in: header
+      name: X-Customer-Token
+      description: Opaque token from POST /sessions. Expires after 30 minutes. Never show to the customer.
+  parameters:
+    CaseReference:
+      name: caseReference
+      in: path
+      required: true
+      schema:
+        type: string
+        examples: [ORY-1042]
+  schemas:
+    SessionRequest:
+      type: object
+      required: [fullName, email, accountNumber, issue]
+      additionalProperties: false
+      properties:
+        fullName:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        accountNumber:
+          type: string
+          examples: [NF-100234]
+        issue:
+          type: string
+          maxLength: 1000
+    SessionVerified:
+      type: object
+      required: [verified, caseReference, customerToken, state, summary]
+      properties:
+        verified:
+          type: boolean
+          const: true
+        caseReference:
+          type: string
+        customerToken:
+          type: string
+          description: Opaque. Expires after 30 minutes.
+        state:
+          type: string
+          description: Case state. Known values include READY_FOR_ACTION, AWAITING_APPROVAL, ESCALATED. Others may exist.
+          examples: [READY_FOR_ACTION]
+        summary:
+          type: string
+    SessionNotVerified:
+      type: object
+      required: [verified, message]
+      properties:
+        verified:
+          type: boolean
+          const: false
+        message:
+          type: string
+    Case:
+      type: object
+      required: [caseReference, state, stateLabel, findings, objectives, proposedActions, ledger, escalations]
+      properties:
+        caseReference:
+          type: string
+        state:
+          type: string
+        stateLabel:
+          type: string
+        findings:
+          $ref: '#/components/schemas/Findings'
+        objectives:
+          type: array
+          items:
+            type: object
+            required: [key, label, status]
+            properties:
+              key:
+                type: string
+              label:
+                type: string
+              status:
+                type: string
+        proposedActions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProposedAction'
+        ledger:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerEntry'
+        escalations:
+          type: array
+          items:
+            type: object
+            required: [status, channel]
+            properties:
+              status:
+                type: string
+              channel:
+                type: string
+    Findings:
+      type: object
+      required: [priorCancellationFound, priorCancellationAt, accountStillActive, disputedCharge]
+      properties:
+        priorCancellationFound:
+          type: boolean
+        priorCancellationAt:
+          type: [string, 'null']
+          format: date-time
+        accountStillActive:
+          type: boolean
+        disputedCharge:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [amountCents, chargedAt, description]
+              properties:
+                amountCents:
+                  type: integer
+                chargedAt:
+                  type: string
+                  format: date-time
+                description:
+                  type: string
+    ProposedAction:
+      type: object
+      required: [actionId, operation, label, consentText, needsApproval, status]
+      properties:
+        actionId:
+          type: string
+          format: uuid
+        operation:
+          type: string
+          enum: [subscription.correct_cancellation, subscription.create_billing_review]
+        label:
+          type: string
+        consentText:
+          type: string
+          description: Show to the customer verbatim before sending consent true.
+        needsApproval:
+          type: boolean
+          description: True for a billing review of a charge over $50.00.
+        status:
+          type: string
+    LedgerEntry:
+      type: object
+      properties:
+        requestedOutcome:
+          type: string
+        executionResult:
+          type: string
+        finalOutcome:
+          type: string
+        verifiedAt:
+          type: [string, 'null']
+          format: date-time
+        summary:
+          type: string
+        receiptRef:
+          type: [string, 'null']
+    ConfirmRequest:
+      type: object
+      required: [consent]
+      additionalProperties: false
+      properties:
+        consent:
+          type: boolean
+    ConfirmResult:
+      type: object
+      required: [status, receiptNo, verification, caseState, message]
+      properties:
+        status:
+          type: string
+          enum: [EXECUTED, DUPLICATE, DECLINED, AWAITING_APPROVAL, FAILED]
+        receiptNo:
+          type: [string, 'null']
+        verification:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [verified, summary]
+              properties:
+                verified:
+                  type: boolean
+                summary:
+                  type: string
+        caseState:
+          type: string
+        message:
+          type: string
+    EscalationRequest:
+      type: object
+      required: [channel, reason]
+      additionalProperties: false
+      properties:
+        channel:
+          type: string
+          enum: [callback_request, email_request]
+        reason:
+          type: string
+          maxLength: 500
+    EscalationResult:
+      type: object
+      required: [escalationId, status, channel, message]
+      properties:
+        escalationId:
+          type: string
+        status:
+          type: string
+          const: OPEN
+        channel:
+          type: string
+          enum: [callback_request, email_request]
+        message:
+          type: string
+    ReceiptVerification:
+      type: object
+      required: [valid]
+      properties:
+        valid:
+          type: boolean
+        receipt:
+          type: object
+          properties:
+            receiptNo:
+              type: string
+            operation:
+              type: string
+            issuedAt:
+              type: string
+              format: date-time
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - NOT_FOUND
+                - FORBIDDEN
+                - UNAUTHENTICATED
+                - VALIDATION
+                - CONFLICT
+                - CONSENT_REQUIRED
+                - APPROVAL_REQUIRED
+                - STALE_STATE
+                - POLICY_DENIED
+                - RATE_LIMITED
+            message:
+              type: string
+  responses:
+    Validation:
+      description: Request body, header or parameter failed validation (proposed HTTP 400, code VALIDATION).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: VALIDATION
+              message: Idempotency-Key must be 8 to 120 characters.
+    Unauthenticated:
+      description: Missing or invalid API key, or missing or expired customer token (proposed HTTP 401, code UNAUTHENTICATED). On an expired token, call POST /sessions again.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: UNAUTHENTICATED
+              message: The customer token is missing or has expired.
+    Forbidden:
+      description: Key lacks scope egain:actions, or the token does not belong to this case (proposed HTTP 403, code FORBIDDEN).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: FORBIDDEN
+              message: Not permitted for this case.
+    NotFound:
+      description: The case, action or receipt does not exist for this caller (proposed HTTP 404, code NOT_FOUND).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: NOT_FOUND
+              message: Not found.
+    ConflictOrStale:
+      description: >-
+        CONFLICT (for example an open escalation already exists) or STALE_STATE (the case changed after
+        the customer consented, so the consent no longer applies). Proposed HTTP 409. Re-read the case
+        and ask for consent again on STALE_STATE.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: STALE_STATE
+              message: The case changed since you confirmed. Please confirm again.
+    Unprocessable:
+      description: >-
+        CONSENT_REQUIRED, APPROVAL_REQUIRED or POLICY_DENIED (proposed HTTP 422). The action cannot proceed
+        as requested; do not retry unchanged.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: POLICY_DENIED
+              message: This request is outside the permitted window.
+    RateLimited:
+      description: Too many requests (proposed HTTP 429, code RATE_LIMITED). Wait briefly and retry once.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: RATE_LIMITED
+              message: Too many requests. Try again shortly.

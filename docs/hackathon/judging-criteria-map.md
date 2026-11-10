@@ -1,0 +1,32 @@
+# Judging criteria map
+
+Scored out of 125 (https://www.egain.com/ai-agent-hackathon/). Tie-break order: Functionality and Reliability, then Demo Video and Storytelling, then Customer and Business Value.
+
+Nothing has been scored, tested or run on eGain. The "evidence still needed" column lists what must exist before any claim in this map can be made to a judge. All eGain evidence is `BLOCKED — no eGain tenant access in this environment`.
+
+| Criterion (points) | How the entry addresses it | Evidence still needed | Risk |
+|---|---|---|---|
+| **1. Customer and business value (25)**: clarity and importance of the problem; value delivered; credibility of the real-world use case | The problem is concrete and familiar: a customer asked to cancel, was billed again, and now has to explain the history to several people. The agent checks the facts, applies only what policy permits with consent, opens a review rather than deciding money, and hands over with full context. The value stated is fewer repeat contacts and safer automation, not a measured saving | A walk-through from the real published agent that shows the problem and the outcome. Reviewer notes with the synthetic identities. No numeric claims unless measured | The value is argued, not measured. Avoid percentages. A fictional provider is credible only if the demo is concrete (amounts, dates, receipts) |
+| **2. Functionality and reliability (25)**: grounded answers; working published agent and link; reliable pre-chat, escalation, process workflows; handling of errors and knowledge gaps | Twelve self-authored documents are the only source. Scripts cover policy answers, unsupported questions, ambiguity, missing information, failed steps, repeated complaints, unauthorized requests, duplicates, and both escalation options | Published link opened in a private window after the five-minute wait. Every script run in Test AI Agent and on the link. The acceptance log completed with evidence | Highest risk, and the tie-break criterion. Nothing is yet configured or published. Trial limits on intents, hosted link and workflow steps are `UNVERIFIED in trial`. Test AI Agent and the link can differ |
+| **3. Effective use of eGain (20)**: strong integration of intents and workflows; appropriate escalation and process design; capabilities beyond basic question answering | Intents reviewed and mapped to documents (`egain/intents.md`); one intent bound to a process workflow; pre-chat variables shared by exact name with the process and escalation workflows; escalation workflow with two options; process workflow added to the agent as a tool. These follow what eGain's public notes say exists | Screens or notes from the tenant showing each element configured. Confirmation that the process workflow is bound to the intent. The Action working, if Tier A | Public documentation of several features is excerpt-level only. The depth of use depends on what the trial exposes. Do not mention MCP, A2A, Composer, Agentic Studio or connectors unless used and confirmed |
+| **4. Creativity and customer experience (15)**: originality; thoughtful workflow; clear, intuitive experience; customization beyond the tutorial | A recovery assistant that tells customers what has really happened ("Verified", "Review opened — no money has moved"), explains partial resolution honestly, never promises refunds, and lets a person take over at any step. A pre-chat form that avoids re-asking for details. Receipts that can be checked | The real conversation reading as clear and calm. Customization beyond a theme (workflows, wording, consent steps) visible on the link | Tone and clarity can degrade if the trial's message formatting is limited. Keep messages short |
+| **5. Action and good judgment (25)**: solves end-to-end and reduces human handoffs; takes action where it adds value; knows its limits and escalates or declines | Two bounded actions (apply the earlier cancellation; open a billing review) after explicit per-step consent, idempotent, read back before success is reported. Over-threshold charges wait for approval. Refund promises, legal advice, other people's accounts, override attempts and sensitive data are declined; no-safe-action and failures escalate. No operation moves money | The Action working on the published link (T8, T9, T11 to T14), receipts verifying, and the decline and escalation scripts passing (T7, T10, T15 to T19) | Dependent on the HTTP Action existing in the trial: `Not found in public docs` and `UNVERIFIED in trial`. If Tier B or C, this criterion is weakened. State the limitation honestly rather than simulate it. Orylo's reliability is outside eGain; an outage during judging would show as a failure |
+| **6. Demo video and storytelling (15)**: clear problem, solution and value; compelling demonstration; strongest feature; storytelling within one minute | A 60-second script in six timed blocks (customer problem, intent and policy, consented next step, action and receipt, honest partial result, record and handoff), with an alternate script if no Action exists | A real, unedited take on the published agent; receipts checked; length at or under 60 seconds | One minute is tight. If any block fails live, it must be re-recorded rather than edited. Recording is `BLOCKED — no eGain tenant access in this environment` |
+
+## Where the entry is deliberately restrained
+
+The brief for this entry stresses judgment over capability. The following choices cost some visible capability and are intentional:
+
+- There is no refund operation anywhere, so the entry cannot overreach on money.
+- The agent asks for consent per action, which adds clicks.
+- Success is reported only when read back; an unconfirmed result is shown as unconfirmed.
+- Unknown questions are declined, not answered from general knowledge.
+
+## What would change the plan
+
+| Event | Effect |
+|---|---|
+| Trial has no outbound HTTP step | Criterion 5 relies on judgment (declining, escalating) rather than action. Use Version B of the description and the alternate video script. Say so |
+| Trial has no hosted shareable link | Criterion 2 is at risk. Ask organizers before the deadline; do not claim a link |
+| Orylo is unreachable at judging time | The agent must degrade as in Branch F of the guided flow: say the system is unavailable and offer a person |
+| The earlier deadline (Devpost) turns out to be real | The internal target of 2026-11-12 23:30 Africa/Lagos still holds |

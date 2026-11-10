@@ -1,0 +1,98 @@
+# Published agent acceptance log (template)
+
+This is an empty template. Nothing has been published, configured or tested on eGain from this repository. Every status is `BLOCKED — no eGain tenant access in this environment` until the owner fills it in from what was observed.
+
+Rules for filling it in:
+
+- Write only what you saw. Leave a row blocked if you did not do it.
+- A row is complete only when the Evidence column holds something another person can check (a timestamp, a receipt number, a screenshot filename kept outside the repository).
+- Do not put API keys, customer tokens or real personal data in this file.
+
+## 1. Publication record
+
+| Field | Value |
+|---|---|
+| eGain account / tenant name | `BLOCKED — no eGain tenant access in this environment` |
+| Agent name | `BLOCKED — no eGain tenant access in this environment` |
+| Published URL | `[NOT PUBLISHED — owner to add after publishing]` |
+| Date and time published (Africa/Lagos) | `BLOCKED — no eGain tenant access in this environment` |
+| Time the link was first opened after publishing (must be at least 5 minutes later) | `BLOCKED — no eGain tenant access in this environment` |
+| Opened in a private window without an eGain session? | `[ ]` yes  `[ ]` no |
+| Opened on a second device / network? | `[ ]` yes  `[ ]` no |
+| Person who tested | `BLOCKED — no eGain tenant access in this environment` |
+| Orylo build / deploy identifier used | `BLOCKED — no eGain tenant access in this environment` |
+| Orylo synthetic data reset before testing? | `[ ]` yes  `[ ]` no |
+
+## 2. Solution requirements (from the rules page)
+
+| # | Requirement | Configured in eGain | Tested in Test AI Agent | Tested on published link | Evidence |
+|---|---|---|---|---|---|
+| 01 | Knowledge-based AI Agent trained on authorized content | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | |
+| 01b | Generated intents reviewed, answer accuracy tested | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | |
+| 02 | Personalized and published, working shareable link | `[ ]` BLOCKED — no eGain tenant access in this environment | n/a | `[ ]` BLOCKED — no eGain tenant access in this environment | |
+| 03 | Pre-chat workflow | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | |
+| 04 | Escalation workflow with at least two options | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | |
+| 05 | Process workflow connected to an intent (I-02) | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | |
+| 06 | Action enabled and added to the AI Agent | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | |
+| 07 | Validation in Test AI Agent and via published link | n/a | `[ ]` BLOCKED — no eGain tenant access in this environment | `[ ]` BLOCKED — no eGain tenant access in this environment | |
+
+## 3. Action tier decided
+
+| Tier (see `action-contracts/README.md`) | Chosen? | Date decided | Reason |
+|---|---|---|---|
+| A: outbound call with a secret works | `[ ]` | | |
+| B: notify-only | `[ ]` | | |
+| C: no outbound calls | `[ ]` | | |
+
+## 4. Scenario results
+
+Copy the result from `test-scripts.md`. Do not enter PASS unless you ran it.
+
+| Scenario | TAI result | TAI evidence | PUB result | PUB evidence |
+|---|---|---|---|---|
+| T1 Authorized policy answer | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T2 Unsupported question | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T3 Contradictory / ambiguous | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T4 Missing information | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T5 Failed step (5a, 5b) | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T6 Repeated complaint | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T7 Unauthorized action | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T8 Authorized action | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T9 Duplicate action | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T10 Human escalation (callback, email, mid-consent) | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T11 Approval path | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T12 Already cancelled | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T13 No earlier request | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T14 Customer declines | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T15 Refund promise request | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T16 Legal advice | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T17 Override and injection | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T18 Stale or expired state | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T19 Sensitive data | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+| T20 Pre-chat handoff | NOT RUN — BLOCKED | | NOT RUN — BLOCKED | |
+
+## 5. Differences between Test AI Agent and the published link
+
+| Observation | Date | Resolved? |
+|---|---|---|
+| | | |
+
+## 6. Defects and limitations found
+
+| # | Description | Scenario | Severity | Fix or accepted limitation | Retested after republish (+5 min)? |
+|---|---|---|---|---|---|
+| | | | | | |
+
+## 7. Statements the submission may make
+
+Tick only what this log supports. Each unticked box means the submission must not say it.
+
+- `[ ]` The agent is trained on authorized content only. (needs rows 01, 01b)
+- `[ ]` The agent is published with a working shareable link. (needs row 02)
+- `[ ]` The pre-chat workflow works. (needs row 03, T4, T20)
+- `[ ]` The escalation workflow offers two options. (needs row 04, T10)
+- `[ ]` The process workflow is connected to an intent and works. (needs row 05, T8, T11, T12, T13, T14)
+- `[ ]` The agent takes a real action through the Orylo backend. (needs row 06, T8, T9, and Tier A)
+- `[ ]` All required workflows were published and tested. (needs everything above)
+
+Sign-off: `BLOCKED — no eGain tenant access in this environment`

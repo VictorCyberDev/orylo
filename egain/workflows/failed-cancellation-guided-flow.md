@@ -177,11 +177,11 @@ Triggered when `AWAITING_APPROVAL` is returned for the billing review, or `needs
 
 Before consent:
 
-> "Because this charge is over $50.00, a team member has to approve the review before it is opened. If you confirm, I'll send it for approval. Nothing is refunded or reversed by that."
+> "Because this charge is over $50.00, a team member has to approve the review before it is opened. If you confirm, I'll send it for approval. That does not refund or reverse anything."
 
 After the API returns `AWAITING_APPROVAL`:
 
-> "Done: your request is recorded and waiting for a team member's approval. It is not open yet, and no money has moved. You'll see the approval and the review in case {caseReference}."
+> "Your request is recorded and waiting for a team member's approval. It is not open yet, and no money has moved. You'll see the approval and the review in case {caseReference}."
 
 Do not use "Verified" or "Review opened" until a later read of the case shows it. Do not poll in a loop in chat. If the customer asks for an update later, call `GET /cases/{caseReference}` once and report only what the ledger and objectives say.
 
