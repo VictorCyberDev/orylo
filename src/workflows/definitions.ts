@@ -69,7 +69,7 @@ const raw: unknown[] = [
         { key: "preferredWindows", label: "When could we come instead? (one per line)", type: "text_list", required: true },
         { key: "contactMethod", label: "How should the scheduling team contact you?", type: "choice", options: ["email", "phone"], required: true },
       ], next: "check_missed" },
-      { id: "check_missed", type: "decision", label: "Was the appointment in the past?", branches: [{ when: [{ path: "$.answers.appointmentIsPast", op: "eq", value: true }], next: "propose" }], default: "esc_not_missed" },
+      { id: "check_missed", type: "decision", label: "Was the appointment in the past?", branches: [{ when: [{ path: "$.answers.appointmentDateIsPast", op: "eq", value: true }], next: "propose" }], default: "esc_not_missed" },
       { id: "propose", type: "propose_actions", label: "Propose a reschedule request", actions: [{ operation: "internal.create_reschedule_request", input: { preferredWindows: "$.answers.preferredWindows", contactMethod: "$.answers.contactMethod" } }], next: "wait" },
       { id: "wait", type: "await_objectives", label: "Wait for a confirmed slot", objectives: ["reschedule_requested", "new_appointment_confirmed"], timeoutHours: 72, onTimeout: "esc_timeout", next: "done" },
       { id: "done", type: "end", label: "New appointment confirmed", outcome: "RESOLVED" },

@@ -13,7 +13,8 @@ export type Actor =
   | { type: "operator"; id: string; role: OrgRole }
   | { type: "customer"; id: string; customerId: string }
   | { type: "channel"; id: string; customerId: string; keyId?: string }
-  | { type: "system"; id: string };
+  | { type: "system"; id: string }
+  | { type: "integration"; id: string };
 
 export interface Ctx {
   orgId: string;
@@ -27,4 +28,4 @@ export const actorCustomerId = (a: Actor): string | undefined =>
   a.type === "customer" || a.type === "channel" ? a.customerId : undefined;
 /** Role matrix treats a verified channel like the customer it represents. */
 export const actorKind = (a: Actor): "customer" | "operator" | "system" =>
-  a.type === "operator" ? "operator" : a.type === "system" ? "system" : "customer";
+  a.type === "operator" ? "operator" : a.type === "system" || a.type === "integration" ? "system" : "customer";

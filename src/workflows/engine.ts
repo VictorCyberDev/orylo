@@ -6,7 +6,7 @@
  */
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { caseEvidence, caseObjectives, workflowDefinitions, workflowExecutions, workflowStepExecutions, workflowVersions, resolutionCases } from "@/db/schema";
+import { caseEvidence, workflowDefinitions, workflowExecutions, workflowStepExecutions, workflowVersions, resolutionCases } from "@/db/schema";
 import type { DbOrTx } from "@/db";
 import { db as rootDb } from "@/db";
 import { AppError, forbidden, notFound } from "@/domain/errors";
@@ -16,7 +16,6 @@ import { requestAction } from "@/domain/actions";
 import { escalateCase } from "@/domain/escalation";
 import { AdapterError, getSubscriptionProvider, type SubscriptionProvider } from "@/adapters/subscription";
 import { WorkflowSpecSchema, evalCondition, getPath, type Field, type WorkflowNode, type WorkflowSpec } from "./spec";
-import { sql } from "drizzle-orm";
 import { count } from "drizzle-orm";
 
 type ExecCtx = { accountNumber?: string; answers: Record<string, unknown>; findings?: Record<string, unknown>; retries: Record<string, number>; waitingSince: Record<string, string>; pending?: string[] };
@@ -77,7 +76,8 @@ async function diagnose(provider: SubscriptionProvider, orgId: string, customerI
   const [reqs, charges] = await Promise.all([provider.readCancellationRequests(orgId, acct.accountId), provider.readCharges(orgId, acct.accountId)]);
   const prior = reqs.filter((r) => r.status !== "PROCESSED")[0];
   const since = prior?.requestedAt ?? acct.cancelledAt ?? null;
-  const disputed = since ? charges.find((c) => c.status === "POSTED" && c.chargedAt.getTime() > since.getTime()) : undefined;
+  // With a known cancellation request/date: the first charge after it. Otherwise the latest posted charge (a candidate only).
+  const disputed = since ? charges.find((c) => c.status === "POSTED" && c.chargedAt.getTime() > since.getTime()) : charges.find((c) => c.status === "POSTED");
   const underReview = charges.some((c) => c.status === "UNDER_REVIEW");
   return {
     accountFound: true,
@@ -318,4 +318,3 @@ export async function executionView(db: DbOrTx, ctx: Ctx, caseId: string) {
   };
 }
 
-export { caseObjectives, sql };

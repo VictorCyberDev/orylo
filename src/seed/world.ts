@@ -73,7 +73,8 @@ export async function seedWorld(db: Db, opts: Opts = {}): Promise<World> {
     .returning();
   w.orgs = { nf: nf.id, ke: ke.id };
   for (const o of [nf, ke]) {
-    await db.insert(subscriptions).values({ organizationId: o.id, planId: planRows[0].id, status: "trialing", trialEndsAt: new Date(Date.now() + 30 * DAY), currentPeriodStart: new Date(), currentPeriodEnd: new Date(Date.now() + 30 * DAY) });
+    // Northfield trials the Team plan (so the seeded 7-person team + API keys are entitled); Kestrel is on the free Pilot.
+    await db.insert(subscriptions).values({ organizationId: o.id, planId: (o.id === nf.id ? planRows[1] : planRows[0]).id, status: "trialing", trialEndsAt: new Date(Date.now() + 30 * DAY), currentPeriodStart: new Date(), currentPeriodEnd: new Date(Date.now() + 30 * DAY) });
     await db.insert(integrationConnections).values([
       { organizationId: o.id, provider: "demo_subscription", name: "Demo subscription provider (simulator)", config: { mode: "normal", delayMs: 400 } },
       { organizationId: o.id, provider: "egain", name: "eGain (action API caller)", status: "inactive", config: { note: "Live eGain agent is configured on eGain's platform; Orylo exposes the action API." } },
