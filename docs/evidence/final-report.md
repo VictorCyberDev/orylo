@@ -15,7 +15,7 @@ Empty repository: no commits, no branches (not even `main`), no PRs, no issues (
 | Evidence | Result (final code) |
 |---|---|
 | Vitest, real PostgreSQL 16, 7 files | **88 passed / 0 failed** — 6 state-machine unit, 65 domain integration (flows, gateway safety, policy, isolation, workflows, uploads, escalation, analytics, search), 17 security regressions |
-| Playwright, real Chromium, 4 files | see §10 (final run recorded there) |
+| Playwright, real Chromium, 4 files | **41 passed / 0 failed** on the final code (§10) |
 | `tsc --noEmit`, `eslint .`, `prettier --check` | clean |
 | `next build` | passes (all routes) |
 | Fresh clone → `npm ci` → migrate → seed → typecheck → lint → test → build | passed (run before the security patch set: 71 tests; re-run of the full suite since is above) |
@@ -60,7 +60,7 @@ contrast corrected by formula (`docs/product/design-tokens-and-components.md`). 
 **Automated tools find only a subset of issues; no assistive-technology testing was done.**
 
 ## 10. Final browser run
-RESULT_PLACEHOLDER
+**41 passed / 0 failed** (Chromium desktop, 1.9 min, against `next start` on a freshly reset + seeded database). Files: `journey.spec.ts` (customer→operator→customer verified-resolution journey, cross-customer and staff/customer boundaries, unsafe redirect, lead capture), `a11y-responsive.spec.ts` (axe light+dark, keyboard, reduced motion, overflow at 375/820/1280/1440/1920 px, target size), `egain-api.spec.ts` (12 API contract tests), `auth.spec.ts` (7 session/reset/invite/sign-up-closure tests). Earlier intermediate runs had failures that were real and are fixed (form fields wiped on validation error, layout overflow, contract status mismatch, a streaming 200-on-404 caused by a root loading boundary).
 
 ## 11. eGain trial entitlement audit and live status
 `egain/entitlement-audit.md`: every capability is `UNVERIFIED in trial` or `Not found in public docs` — nothing was assumed available. Live agent, published link,
