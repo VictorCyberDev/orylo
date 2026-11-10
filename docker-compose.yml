@@ -1,0 +1,20 @@
+# Local Postgres for Orylo. NOTE: this file was authored but could not be exercised in the
+# build environment (no Docker daemon there). Tests were run against a native PostgreSQL 16.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: orylo
+      POSTGRES_PASSWORD: orylo
+      POSTGRES_DB: orylo
+    ports: ["5432:5432"]
+    volumes:
+      - orylo-pg:/var/lib/postgresql/data
+      - ./scripts/docker-init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orylo -d orylo"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  orylo-pg:
