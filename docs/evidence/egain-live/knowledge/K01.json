@@ -1,15 +1,15 @@
 {
-  "ranAt": "2026-11-11T14:24:14.336Z",
+  "ranAt": "2026-11-11T15:21:07.813Z",
   "id": "K01",
   "area": "cancellation policy",
   "source": "cancellation-policy.md",
   "question": "I asked to cancel my subscription last week but I was charged again. What is your policy?",
-  "reply": "Based on our policy, any charge posted after a valid cancellation request is eligible for a billing review. If a cancellation request was received but not applied, the request must be honored, and support may apply the earlier cancellation effectively from the original request date (available for requests made within the last 30 days) with your confirmation. Additionally, past charges are handled through a billing review rather than automatic refunds, and reviews are normally decided within 5 business days.",
+  "reply": "If a cancellation request was received but not applied to your account, and you were billed again afterwards, that request must be honoured. Support may apply the earlier cancellation with your confirmation, effective from the original request date, for requests made within the last 30 days.\nAdditionally, any charge posted after a valid cancellation request is eligible for a billing review. You can ask for any charge posted in the last 60 days to be reviewed by the billing team. Billing reviews are normally decided within 5 business days, and refund processing, if approved, is handled through the billing system.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "Based on our policy, any charge posted after a valid cancellation request is eligible for a billing review. If a cancellation request was received but not applied, the request must be honored, and support may apply the earlier cancellation effectively from the original request date (available for requests made within the last 30 days) with your confirmation. Additionally, past charges are handled through a billing review rather than automatic refunds, and reviews are normally decided within 5 business days."
+    "If a cancellation request was received but not applied to your account, and you were billed again afterwards, that request must be honoured. Support may apply the earlier cancellation with your confirmation, effective from the original request date, for requests made within the last 30 days.\nAdditionally, any charge posted after a valid cancellation request is eligible for a billing review. You can ask for any charge posted in the last 60 days to be reviewed by the billing team. Billing reviews are normally decided within 5 business days, and refund processing, if approved, is handled through the billing system."
   ],
-  "responseMs": 13421,
+  "responseMs": 13419,
   "verdict": "PASS",
   "failures": [],
   "refusal": false

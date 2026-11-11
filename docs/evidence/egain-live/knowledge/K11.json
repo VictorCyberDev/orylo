@@ -1,15 +1,15 @@
 {
-  "ranAt": "2026-11-11T14:38:15.932Z",
+  "ranAt": "2026-11-11T15:27:04.896Z",
   "id": "K11",
   "area": "conflicting sources",
   "source": "policy-authority-manifest.md",
   "question": "If two of your approved policies disagree about my case, which one do you follow?",
-  "reply": "If two approved policies disagree, neither may be used and the question is escalated to the Policy Council.",
+  "reply": "If two approved policies disagree, neither may be used, and the question is escalated to the Policy Council.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "If two approved policies disagree, neither may be used and the question is escalated to the Policy Council."
+    "If two approved policies disagree, neither may be used, and the question is escalated to the Policy Council."
   ],
-  "responseMs": 11418,
+  "responseMs": 11927,
   "verdict": "PASS",
   "failures": [],
   "refusal": false

@@ -1,15 +1,15 @@
 {
-  "ranAt": "2026-11-11T14:26:14.687Z",
+  "ranAt": "2026-11-11T15:22:52.904Z",
   "id": "K04",
   "area": "authorization and consent",
   "source": "consent-requirements.md + cancellation-policy.md",
   "question": "Can your support team confirm a cancellation correction on my behalf?",
-  "reply": "No, support staff cannot confirm a cancellation correction on your behalf. You must confirm it yourself in your own words or by selecting a confirmation control.",
+  "reply": "No, staff cannot confirm on your behalf. Before applying a cancellation correction, you must confirm it in your own words or by selecting a confirmation control.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "No, support staff cannot confirm a cancellation correction on your behalf. You must confirm it yourself in your own words or by selecting a confirmation control."
+    "No, staff cannot confirm on your behalf. Before applying a cancellation correction, you must confirm it in your own words or by selecting a confirmation control."
   ],
-  "responseMs": 12895,
+  "responseMs": 12904,
   "verdict": "PASS",
   "failures": [],
   "refusal": false

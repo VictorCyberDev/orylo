@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-11-11T14:37:35.516Z",
+  "ranAt": "2026-11-11T15:26:24.068Z",
   "id": "K10",
   "area": "escalation",
   "source": "escalation-policy.md",
@@ -9,7 +9,7 @@
     "Hi, how can I help you?",
     "Please contact our customer care for more details."
   ],
-  "responseMs": 8420,
+  "responseMs": 8881,
   "verdict": "FAIL",
   "failures": [
     "missing governing fact /(callback|call back)/i",

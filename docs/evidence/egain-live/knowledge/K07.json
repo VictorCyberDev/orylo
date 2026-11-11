@@ -1,15 +1,15 @@
 {
-  "ranAt": "2026-11-11T14:27:58.541Z",
+  "ranAt": "2026-11-11T15:24:37.356Z",
   "id": "K07",
   "area": "duplicate charges",
   "source": "duplicate-charge-investigation.md",
   "question": "I was charged twice for the same month. What counts as a duplicate and what happens next?",
-  "reply": "A duplicate charge is defined as two charges on the same account for the same plan and billing period posted within 72 hours of each other.\nRegarding what happens next:\nA confirmed duplicate charge is escalated to the billing team for review.Support never promises a refund during the investigation.Billing reviews are normally decided within 5 business days, and refund processing (where approved) happens in the billing system, which may take additional days to appear with your bank.",
+  "reply": "Two charges on the same account for the same plan and billing period posted within 72 hours of each other are treated as a possible duplicate.\nA confirmed duplicate is escalated to the billing team for review. Please note that support never promises a refund during the investigation.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "A duplicate charge is defined as two charges on the same account for the same plan and billing period posted within 72 hours of each other.\nRegarding what happens next:\nA confirmed duplicate charge is escalated to the billing team for review.Support never promises a refund during the investigation.Billing reviews are normally decided within 5 business days, and refund processing (where approved) happens in the billing system, which may take additional days to appear with your bank."
+    "Two charges on the same account for the same plan and billing period posted within 72 hours of each other are treated as a possible duplicate.\nA confirmed duplicate is escalated to the billing team for review. Please note that support never promises a refund during the investigation."
   ],
-  "responseMs": 13424,
+  "responseMs": 13395,
   "verdict": "PASS",
   "failures": [],
   "refusal": false

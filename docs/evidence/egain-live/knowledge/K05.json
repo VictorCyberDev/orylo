@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-11-11T14:26:35.370Z",
+  "ranAt": "2026-11-11T15:23:15.426Z",
   "id": "K05",
   "area": "human-approval threshold",
   "source": "refund-review-rules.md",
@@ -9,7 +9,7 @@
     "Hi, how can I help you?",
     "A billing review for a charge over $50.00 needs a team member's approval before it can be opened."
   ],
-  "responseMs": 11894,
+  "responseMs": 13393,
   "verdict": "PASS",
   "failures": [],
   "refusal": false
