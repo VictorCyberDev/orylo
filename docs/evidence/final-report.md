@@ -13,6 +13,26 @@ customer/operator/admin interfaces, data export/erasure, an eGain-facing HTTP ac
 customer**. The live eGain agent (Gate H) is **BLOCKED**: no eGain tenant access exists here, and obtaining it needs the owner's own account (see `egain/published-agent-acceptance-log.md` §0).
 **Readiness verdict: a verified, honest prototype and eGain-ready backend; NOT production-ready and NOT hackathon-submittable as an eGain entry until the owner completes the eGain side.**
 
+## 0. Update 2026-11-11 (later) — eGain live integration, knowledge audit, deployment attempt
+
+| Item | Class | Basis |
+|---|---|---|
+| eGain widget integrated (official script, central config, strict CSP, one script, route-scoped, loading/unavailable/retry) | **VERIFIED COMPLETE** | `tests/e2e/egain-widget.spec.ts` (offline stand-in incl. a negative control), `tests/live/widget.live.spec.ts` (**real eGain** inside real Orylo pages, desktop + mobile), `docs/evidence/egain-widget-csp.md` |
+| Widget works on loopback origins | **FAILED (eGain-side)** | eGain's API rejects `localhost`/`127.0.0.1` by CORS; works on real hostnames |
+| Knowledge audit of the published agent | **FAILED** (the agent) / **VERIFIED** (the finding) | 0 of 11 policy cases pass; it answers only the repository's engineering topics (`docs/evidence/egain-live-tests.md`). Which sources are configured: **UNVERIFIED** (needs the eGain admin view) |
+| Knowledge repair | **BLOCKED** (owner login) | `egain/knowledge-fix.md`; importable HTML/PDF + SHA-256 manifest in `egain/upload-pack/` |
+| Native eGain intents / pre-chat / process workflow / escalation options | **UNVERIFIED** (not observable anonymously; K10 suggests not configured) | `egain/published-agent-acceptance-log.md` §0b |
+| eGain → Orylo action call | **BLOCKED** | no public Orylo URL; external-API capability of the trial unverified |
+| OpenAPI contract reconciled with implementation + offline contract test | **VERIFIED COMPLETE** | `tests/unit/egain-contract.test.ts` (5) |
+| `/demo` judge experience (honest status panel, receipt verifier, reviewer-code access, no public credentials) | **VERIFIED COMPLETE** locally | `/demo` + a11y/responsive specs; screenshots |
+| Serverless worker (`JOB_WORKER=request`: post-response drain + GET cron tick) | **VERIFIED locally** | `tests/integration/serverless-worker.test.ts`; manual proof: due job completed by a `/api/health` request with no in-process worker |
+| Public deployment | **BLOCKED** | Neon free plan: 10/10 projects; Supabase free plan: 2 active already; nothing created, **$0 spent** — `docs/operations/vercel-deployment.md` |
+| One-minute video | **BLOCKED** | cannot be recorded truthfully yet |
+| Devpost text | **PREPARED, not applied** | `docs/hackathon/devpost-update.md` (the live page's founder story is to be kept) |
+
+Test totals after this update: **139** database-backed/unit tests and **80** offline browser tests (all passing locally); live tests (not in CI): widget 4/4 pass, knowledge 2/13 pass (both are correct refusals).
+Defects found by this work and fixed: the official loader could not run under a strict CSP (hash allowance, proven load-bearing); the launch button was ignored if clicked in the first seconds (now verified + retried); `/demo` printed the shared password whenever `DEMO_MODE` was on (now reviewer-code gated for public deployments; the seed refuses the public default password on an https deployment).
+
 ## 1. Starting state (verified)
 Empty repository: no commits, no branches (not even `main`), no PRs, no issues (GitHub API + local checkout). `docs/evidence/00-repository-baseline.md`.
 

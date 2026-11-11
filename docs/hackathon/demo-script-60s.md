@@ -2,6 +2,8 @@
 
 The rules require a one-minute video showing a content-based answer, at least one workflow, and the solution's most valuable or distinctive feature. Judges "prioritize clarity, authenticity, and storytelling over editing quality" (https://www.egain.com/ai-agent-hackathon/).
 
+> **2026-11-11 gate:** a live test of the owner's published agent shows it does not yet answer the Northfield policies (0 of 11) and no workflow or action is observable. Do **not** record or submit anything that depends on them until `npm run test:live` passes the knowledge cases. See `organizer-readiness-checklist.md`.
+
 Status: **Prepared as a script.** Nothing has been recorded. The footage can only be recorded after the eGain agent is published and tested, and some blocks depend on the Action: `BLOCKED — no eGain tenant access in this environment`.
 
 ## Rule that overrides everything: do not record unless true

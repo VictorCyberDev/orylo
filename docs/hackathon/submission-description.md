@@ -2,6 +2,8 @@
 
 The official rules ask for "a description of up to 150 words explaining the problem, intended user, business value, and distinctive features" (https://www.egain.com/ai-agent-hackathon/).
 
+> **2026-11-11 gate:** a live test of the owner's published agent shows it does not yet answer the Northfield policies (0 of 11) and no workflow or action is observable. Do **not** record or submit anything that depends on them until `npm run test:live` passes the knowledge cases. See `organizer-readiness-checklist.md`.
+
 **Status: DRAFT. Do not submit until the owner has checked every sentence against `egain/published-agent-acceptance-log.md`.** Sentences that describe the eGain agent calling Orylo are true only if that was built, published and tested in eGain. Nothing was built, published or tested in eGain from this repository (`BLOCKED — no eGain tenant access in this environment`).
 
 ## Version A: full (use only if the Action works on the published link: Tier A in `egain/action-contracts/README.md`)

@@ -18,6 +18,23 @@ Checked before declaring the blocker again, so it is a finding and not an assump
 
 **Result: eGain commissioning is BLOCKED** on exactly one thing — the owner creating or using their own eGain trial/account and publishing the agent. Everything on Orylo's side that the eGain agent calls (five HTTP action endpoints, scoped API keys, consent wording, receipts, escalation records) is built and contract-tested in this repository against the OpenAPI document, and nothing in this log claims otherwise. No eGain feature, screenshot, published link or recorded video exists. Use `configuration-guide.md` and `test-scripts.md` once access exists, and fill sections 1–7 only with what is actually observed.
 
+## 0b. What was verified from outside the eGain console (2026-11-11, no login, no credentials)
+
+The owner supplied the public embed values (agent `015f4f90-8772-4065-9e64-894b3615c5d3`, server `https://ai.egain.cloud/r9iv`). Those are widget configuration, not credentials, and let anyone talk to the agent as an anonymous customer. Everything below was observed by doing exactly that.
+
+| Item | Status | Evidence |
+|---|---|---|
+| The agent exists and answers (name shown: "Orylo", greeting "Hi, how can I help you?") | **VERIFIED** | `docs/evidence/screenshots/egain-demo-desktop-open.png` |
+| Widget loads inside Orylo's real pages under a strict CSP, opens from Orylo's button, survives navigation, absent from operator pages; desktop and mobile | **VERIFIED** (real eGain, non-loopback origin) | `tests/live/widget.live.spec.ts` (4 pass); `docs/evidence/egain-live/widget-console-*.json`; `docs/evidence/egain-widget-csp.md` |
+| Published to the public (anonymous chat works without a login) | **VERIFIED that the embed is live**; whether the owner clicked "publish" for the *current* configuration is **UNVERIFIED** | the above |
+| Knowledge: the agent answers the Northfield policies | **FAILED** — 0 of 11 knowledge cases pass; it answers only the repository's *engineering* topics and refuses policy questions | `docs/evidence/egain-live-tests.md`, `docs/evidence/egain-live/knowledge/K01..K13.json`; fix steps: `knowledge-fix.md` |
+| Which knowledge sources are configured; whether the 12 files were ingested | **UNVERIFIED** (needs the eGain admin view) — only the symptom is observable | `knowledge-fix.md` |
+| Intents (I-01…), pre-chat form, process workflow, escalation options (callback + email) configured and bound | **UNVERIFIED** — the anonymous chat showed no pre-chat form, and K10 ("I want to talk to a real person") returned *"Please contact our customer care for more details."*, which is **not** a callback/email option set. Treat as **not configured** until the owner shows otherwise | `docs/evidence/egain-live/knowledge/K10.json` |
+| eGain → Orylo action call | **BLOCKED** — (1) Orylo has no public URL yet (`docs/operations/vercel-deployment.md`), (2) whether the trial can call an external HTTP API is **UNVERIFIED** and needs the admin UI | — |
+| Published demo link | The `/demo` page is the intended link; **not deployed** | — |
+
+Nothing in this file says a workflow, intent, escalation path or action was configured, tested or published in eGain: none was observable.
+
 ## 1. Publication record
 
 | Field | Value |

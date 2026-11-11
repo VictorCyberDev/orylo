@@ -29,7 +29,8 @@
     "test:live": "playwright test -c playwright.live.config.ts",
     "test:live:summary": "tsx scripts/egain-live-summary.ts",
     "vercel-build": "tsx scripts/vercel-build.ts && next build",
-    "egain:upload-pack": "tsx scripts/egain-upload-pack.ts"
+    "egain:upload-pack": "tsx scripts/egain-upload-pack.ts",
+    "deploy:secrets": "tsx scripts/gen-secrets.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.3.1",

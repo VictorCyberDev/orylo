@@ -4,6 +4,8 @@ Entry: **Failed Cancellation & Billing Recovery** assistant for a fictional prov
 
 ## Honest status
 
+**Update 2026-11-11 — read `published-agent-acceptance-log.md` §0b first.** The owner's agent exists and its chat widget is integrated into Orylo (verified live). Live tests found its knowledge is the repository's engineering content, not these policies (0 of 11 policy cases pass); fix steps are in `knowledge-fix.md`, importable files in `upload-pack/`. Everything else below that says BLOCKED/UNVERIFIED is still true unless §0b says otherwise.
+
 This session had no eGain credentials, tenant or browser. Everything marked BLOCKED below is waiting for the owner to work inside the eGain UI.
 
 | Element | Prepared in repo | Configured in eGain | Tested in eGain |

@@ -210,7 +210,7 @@ paths:
                     verification:
                       verified: true
                       summary: The account shows as cancelled effective the original request date.
-                    caseState: IN_PROGRESS
+                    caseState: READY_FOR_ACTION
                     message: Your cancellation has been applied.
                 awaitingApproval:
                   summary: Charge over $50.00, awaiting a team member
@@ -231,10 +231,8 @@ paths:
                   value:
                     status: DUPLICATE
                     receiptNo: EXAMPLE-RECEIPT-0001
-                    verification:
-                      verified: true
-                      summary: This step was already applied.
-                    caseState: IN_PROGRESS
+                    verification: null
+                    caseState: READY_FOR_ACTION
                     message: This step was already applied; nothing changed a second time.
         '400':
           $ref: '#/components/responses/Validation'
@@ -257,7 +255,8 @@ paths:
       summary: Record a callback request or email follow-up
       description: |
         The two demonstration escalation options. Each creates a tracked escalation record with an owner
-        queue. Contact details shown to customers are demonstration details only.
+        queue. Contact details shown to customers are demonstration details only. Repeating the request while one is
+        already open is idempotent: it returns 200 with the same `escalationId` (not 409).
       security:
         - bearerAuth: []
           customerToken: []
@@ -296,8 +295,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/ConflictOrStale'
         '429':
           $ref: '#/components/responses/RateLimited'
   /api/v1/receipts/{receiptNo}/verify:
@@ -311,8 +308,10 @@ paths:
         - name: receiptNo
           in: path
           required: true
+          description: Format RCPT-YYYYMMDD- followed by 16 uppercase hex digits. Anything else returns 404 {valid:false}.
           schema:
             type: string
+            pattern: '^RCPT-[0-9]{8}-[A-F0-9]{16}$'
       responses:
         '200':
           description: Verification result.
