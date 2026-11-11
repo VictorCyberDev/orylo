@@ -5,6 +5,11 @@ import { AGENT_ID, SERVER_URL } from "./agent";
 /**
  * The REAL eGain widget running inside the REAL Orylo pages under Orylo's REAL CSP.
  *
+ * !! LIMIT (found 2026-11-11): these tests serve Orylo through Playwright request interception, which does NOT enforce eGain's CORS
+ * !! admission of the page origin. They prove integration + CSP + navigation, NOT that eGain admits this origin. Admission is proven only by
+ * !! tests/live/public.live.spec.ts, which loads the deployed site with no interception (it currently FAILS until the owner adds the
+ * !! site's origin to the agent's allowed domains in eGain).
+ *
  * eGain's API rejects loopback origins by CORS (observed 2026-11-11: the widget never starts on http://localhost:3000 or
  * 127.0.0.1), so this test serves the locally running Orylo (LIVE_BASE_URL) under a non-loopback origin
  * (https://orylo-live.example) via request interception. Orylo's own response headers — including the CSP — pass through

@@ -18,6 +18,7 @@ export interface EgainClientConfig {
   agentId: string;
   serverUrl: string;
   scriptUrl: string;
+  standaloneUrl?: string;
   nonce?: string;
 }
 type Status = "off" | "loading" | "ready" | "unavailable";
@@ -177,6 +178,16 @@ function EgainStatusChip({ config }: { config: EgainClientConfig }) {
             >
               Try again
             </button>
+            {config.standaloneUrl ? (
+              <a
+                href={config.standaloneUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm underline"
+              >
+                Open the agent on eGain&apos;s page
+              </a>
+            ) : null}
             <a href="/contact" className="text-sm underline">
               Contact a person
             </a>
@@ -233,6 +244,21 @@ export function EgainLaunchButton({
       </button>
       {st === "ready" ? (
         <p className="t-caption">If nothing opens, use the chat bubble at the bottom right of the page.</p>
+      ) : null}
+      {config.standaloneUrl ? (
+        <p className="t-caption">
+          Prefer a full page, or the bubble does not appear?{" "}
+          <a
+            href={config.standaloneUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+            data-testid="egain-standalone"
+          >
+            Open the same agent on eGain&apos;s own page
+          </a>
+          .
+        </p>
       ) : null}
     </div>
   );

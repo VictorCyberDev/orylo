@@ -1,0 +1,12 @@
+{
+  "ranAt": "2026-11-11T14:52:44.448Z",
+  "id": "W1",
+  "title": "complaint is understood and the identity policy is applied before anything else",
+  "customerSaid": "I cancelled my subscription 9 days ago but I was charged again 3 days ago.",
+  "agentReply": "A charge posted after a valid cancellation request is eligible for a billing review. You can ask for any charge posted in the last 60 days to be reviewed by the billing team. Opening a review does not automatically refund, reverse, or credit anything, and support staff never promise a refund during an investigation. Billing reviews are normally decided within 5 business days, and if approved, refund processing happens in the billing system and may take additional days to appear with your bank.",
+  "verdict": "FAIL",
+  "failures": [
+    "missing /(email)/i",
+    "missing /(account number)/i"
+  ]
+}

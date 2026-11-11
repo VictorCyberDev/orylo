@@ -1,0 +1,31 @@
+{
+  "ranAt": "2026-11-11T14:54:00.666Z",
+  "site": "https://orylo-demo.vercel.app",
+  "pages": {
+    "/": 200,
+    "/demo": 200,
+    "/product": 200,
+    "/security": 200,
+    "/pricing": 200,
+    "/sign-in": 200
+  },
+  "health": {
+    "status": "ok",
+    "db": "up",
+    "jobs": {
+      "pending": 2,
+      "running": 0,
+      "dead": 0,
+      "oldestDueSeconds": 0
+    }
+  },
+  "csp": "default-src 'self'; script-src 'self' 'nonce-MTVjNmMzMDYtNjZiMi00ZmFiLWE4YjMtMjYxZDk4NjdjZTQx' 'strict-dynamic' 'unsafe-hashes' 'sha256-5X3p0dG3QAvxPR0b6Av1PH/Eaf1fbooQzfxMViLUgqs=' 'sha256-lo7ZdP6kFds+wf1WMWvn7MhcFVFJV44kAXODRevzRZ8='; style-src 'self' 'unsafe-inline' https://ai.egain.cloud https://cdn.aiagent.egain.cloud https://fonts.googleapis.com; img-src 'self' data: blob: https://ai.egain.cloud https://cdn.aiagent.egain.cloud; font-src 'self' data: https://cdn.aiagent.egain.cloud https://fonts.gstatic.com; media-src 'self' https://cdn.aiagent.egain.cloud; connect-src 'self' https://ai.egain.cloud https://api.ai.egain.cloud https://cdn.aiagent.egain.cloud; frame-src 'self' https://ai.egain.cloud; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+  "tickWithoutSecret": 401,
+  "tickWithSecret": {
+    "ok": true,
+    "claimed": 0,
+    "succeeded": 0,
+    "retried": 0,
+    "dead": 0
+  }
+}

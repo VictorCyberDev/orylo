@@ -137,6 +137,29 @@ test.describe("eGain widget: embedding and CSP", () => {
   });
 });
 
+test.describe("eGain widget: full-page fallback", () => {
+  test("/demo always offers eGain's own full-page agent link (works when the bubble cannot load on this origin)", async ({
+    page,
+  }) => {
+    await standIn(page, "fail");
+    await page.goto("/demo");
+    const link = page.getByTestId("egain-standalone");
+    await expect(link).toHaveAttribute(
+      "href",
+      /^https:\/\/ai\.egain\.cloud\/r9iv\/system\/web\/apps\/aiagent\/cc\/web\/index\.html\?agentid=[0-9a-f-]{36}&platform=standalone/,
+    );
+    await expect(link).toHaveAttribute("target", "_blank");
+    await expect(link).toHaveAttribute("rel", /noopener/);
+    // and the unavailable chip repeats it
+    await expect(page.getByTestId("egain-status")).toHaveAttribute("data-state", "unavailable", {
+      timeout: 15_000,
+    });
+    await expect(
+      page.getByTestId("egain-status").getByRole("link", { name: /Open the agent on eGain/ }),
+    ).toBeVisible();
+  });
+});
+
 test.describe("eGain widget: negative control", () => {
   test("remove the two hashes from the CSP and the loader cannot run — so the hashes are what makes it work", async ({
     page,

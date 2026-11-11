@@ -44,6 +44,7 @@ import { requeueDead } from "@/jobs/queue";
 import { resolveGrant } from "@/domain/channel";
 import { sha256Hex } from "@/domain/crypto";
 import { getDemoPassword } from "@/seed/demo-password";
+import { demoPeople, type DemoPerson } from "@/config/demo-people";
 import * as admin from "@/domain/admin";
 import { changePlan, cancelSubscription } from "@/domain/billing";
 import {
@@ -835,9 +836,9 @@ export async function retryJobAction(_p: ActionResult, fd: FormData): R {
 
 /** Reviewer access: the owner shares REVIEWER_ACCESS_CODE privately with organizers; the shared demo password is never on a public page. */
 export async function revealReviewerAccessAction(
-  _p: ActionResult & { password?: string },
+  _p: ActionResult & { password?: string; people?: DemoPerson[] },
   fd: FormData,
-): Promise<ActionResult & { password?: string }> {
+): Promise<ActionResult & { password?: string; people?: DemoPerson[] }> {
   try {
     await rateLimit(db, `reviewer:${sha256Hex(clientIp(await headers())).slice(0, 16)}`, 10, 600);
   } catch {
@@ -849,5 +850,6 @@ export async function revealReviewerAccessAction(
   const b = Buffer.from(sha256Hex(expected ?? ""));
   const ok = !!expected && expected.length >= 8 && a.length === b.length && timingSafeEqual(a, b);
   if (!ok) return { ok: false, error: "That code isn't valid." };
-  return { ok: true, password: getDemoPassword() };
+  // The synthetic account list is returned only here — it is not in any public page's HTML or props.
+  return { ok: true, password: getDemoPassword(), people: demoPeople };
 }

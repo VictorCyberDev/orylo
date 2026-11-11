@@ -26,6 +26,7 @@ export default function Demo() {
     agentId: eg.agentId,
     serverUrl: eg.serverUrl,
     scriptUrl: eg.scriptUrl,
+    standaloneUrl: eg.standaloneUrl,
   };
   return (
     <div className="mx-auto max-w-5xl space-y-12 px-4 py-14 sm:px-6">
@@ -69,7 +70,7 @@ export default function Demo() {
               <dd className="text-muted">
                 {st.actionsLive
                   ? "The agent calls Orylo to change the account; each change is read back and receipted."
-                  : "Not connected from the agent. The corrected cancellation and billing review are performed in the Orylo portal below — the same governed action path the agent will call."}
+                  : "Not connected from the agent. If the agent says a review was opened or a cancellation applied, that wording is wrong: nothing has been changed by the chat. The corrected cancellation and billing review are performed — and verified — in the Orylo portal below, the same governed action path the agent is meant to call."}
               </dd>
             </dl>
           </div>
@@ -148,7 +149,7 @@ export default function Demo() {
           </ul>
         </section>
       ) : process.env.REVIEWER_ACCESS_CODE ? (
-        <ReviewerAccess people={demoPeople} />
+        <ReviewerAccess />
       ) : (
         <Alert tone="info" title="Reviewer sign-in is not enabled in this deployment">
           <Link href="/contact" className="underline">

@@ -16,8 +16,16 @@ server `https://ai.egain.cloud/r9iv`, loader `egain-chat.js` build `21.24.0-2-20
    img `ai.egain.cloud`, `cdn.aiagent.egain.cloud`; media `cdn.aiagent.egain.cloud`. Scripts the loader adds are trusted through `'strict-dynamic'` (no host allow-list).
 4. **Deliberately not allowed:** `clickstack.aiagent-dev.egain.cloud` — the widget posts telemetry to a *dev* host. Blocking it costs nothing visible (chat works) and keeps page/user data from going there.
 5. **Harmless noise recorded:** an optional per-tenant `custom.js` hook from `apps.egain.services` returns a non-script response and is blocked by the browser (ORB). Not a CSP matter.
-6. **The widget does not start on loopback origins.** From `http://localhost:3000` or `http://127.0.0.1:3000`, eGain's API rejects the preflight (CORS) and the launcher never appears;
-   non-loopback origins (including with ports) work. Consequence: the real widget cannot be demonstrated from `localhost`; it must be tested on a real hostname. `tests/live` serves the local app under `https://orylo-live.example` by request interception, with Orylo's own headers untouched.
+6. **CORRECTION (2026-11-11, later) — eGain admits only its own origin by default.** The details endpoint the widget calls first
+   (`api.ai.egain.cloud/core/aiservices/v4/aiagent/details/agent/<id>`) answers the CORS preflight with `Access-Control-Allow-Origin` **only for
+   `https://ai.egain.cloud`**; for every other origin (checked with curl: `https://orylo-demo.vercel.app`, `https://example.org`, `http://localhost:3000`) there is no
+   Allow-Origin header, so a real browser blocks the call and the launcher never appears. The deployed site shows exactly this
+   (`Access to fetch … has been blocked by CORS policy`, `launcher: 0`). The earlier statement here that "non-loopback origins work" was **wrong**: those
+   tests used Playwright request interception, which does not enforce this CORS check (proven by loading the same deployed page with and without interception:
+   with → launcher appears, without → blocked). **Consequence:** the widget can run on `https://orylo-demo.vercel.app` only after the owner adds that origin to the eGain
+   agent's allowed domains / trusted origins (an eGain admin setting Orylo cannot reach). Until then `/demo` shows the unavailable state **and a link to eGain's own full-page chat**
+   (`…/cc/web/index.html?agentid=…&platform=standalone&flavor=ss`, the same page the widget frames), which works in a real browser because it runs on eGain's own origin (verified:
+   a policy question was answered with citations).
 7. **CSP belongs to the document, not the route.** After a client-side navigation (e.g. sign-in → portal) the original page's CSP still applies. So the eGain allowances are present on every page except `/app/**` and `/api/**`; the script itself is only *loaded* on `/demo` and `/portal`. Operator/admin pages never carry the allowances.
 8. **Theme:** the widget is not theme-aware (brand colour `#bb128f`, light surface in both Orylo themes). It stays legible in dark mode; it cannot be restyled from outside its iframe.
 9. **Opening it from the page:** eGain exposes an undocumented `window.egainDockAi.launchChat()`. Orylo's "Open the eGain assistant" button uses it, verifies the window opened and retries (a click in the first moments after the launcher appears is otherwise ignored); the visible chat bubble always works as the fallback.

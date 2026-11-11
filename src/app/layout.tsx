@@ -55,6 +55,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             agentId: eg.agentId,
             serverUrl: eg.serverUrl,
             scriptUrl: eg.scriptUrl,
+            standaloneUrl: eg.standaloneUrl,
             nonce,
           }}
         />

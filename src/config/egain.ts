@@ -22,6 +22,8 @@ export interface EgainConfig {
   serverUrl: string;
   origin: string;
   scriptUrl: string;
+  /** eGain's own full-page chat for this agent (the same page the widget frames). Works from its own origin, which eGain's API always admits. */
+  standaloneUrl: string;
 }
 
 /** Only eGain-operated https hosts may ever be loaded as script (a typo or hostile env value must not load arbitrary code). */
@@ -47,6 +49,9 @@ export function getEgainConfig(env: NodeJS.ProcessEnv = process.env): EgainConfi
     serverUrl,
     origin,
     scriptUrl: valid ? `${serverUrl}/system/templates/chat/egain-chat.js` : "",
+    standaloneUrl: valid
+      ? `${serverUrl}/system/web/apps/aiagent/cc/web/index.html?agentid=${agentId}&platform=standalone&flavor=ss`
+      : "",
   };
 }
 

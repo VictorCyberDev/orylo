@@ -19,6 +19,9 @@ describe("eGain widget configuration (offline; the live loader is checked by tes
     expect(c.serverUrl).toBe("https://ai.egain.cloud/r9iv");
     expect(c.scriptUrl).toBe("https://ai.egain.cloud/r9iv/system/templates/chat/egain-chat.js");
     expect(c.origin).toBe("https://ai.egain.cloud");
+    expect(c.standaloneUrl).toBe(
+      "https://ai.egain.cloud/r9iv/system/web/apps/aiagent/cc/web/index.html?agentid=015f4f90-8772-4065-9e64-894b3615c5d3&platform=standalone&flavor=ss",
+    );
   });
   it("refuses to load script from anything that is not an eGain https host", () => {
     for (const bad of [
@@ -34,6 +37,7 @@ describe("eGain widget configuration (offline; the live loader is checked by tes
     } as unknown as NodeJS.ProcessEnv);
     expect(c.enabled).toBe(false);
     expect(c.scriptUrl).toBe("");
+    expect(c.standaloneUrl).toBe("");
     expect(egainCspAdditions(c)).toBeNull();
   });
   it("rejects a malformed agent id and honours the kill switch", () => {

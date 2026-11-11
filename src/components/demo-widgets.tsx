@@ -5,10 +5,10 @@ import { SubmitButton } from "./client";
 import { Alert, Field, inputClass, LinkButton, Card } from "./ui";
 import type { DemoPerson } from "@/config/demo-people";
 
-type State = { ok: boolean; error?: string; password?: string; message?: string };
+type State = { ok: boolean; error?: string; password?: string; people?: DemoPerson[]; message?: string };
 
 /** Reviewer access: a code the owner shares privately. Without it, no credential appears anywhere on the public site. */
-export function ReviewerAccess({ people }: { people: DemoPerson[] }) {
+export function ReviewerAccess() {
   const [s, action] = useActionState(
     revealReviewerAccessAction as (p: State, f: FormData) => Promise<State>,
     {
@@ -31,7 +31,7 @@ export function ReviewerAccess({ people }: { people: DemoPerson[] }) {
             fictional.
           </Alert>
           <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {people.map((p) => (
+            {(s.people ?? []).map((p) => (
               <li key={p.email}>
                 <Card className="flex h-full flex-col gap-2 p-5">
                   <p className="t-label">{p.role}</p>
