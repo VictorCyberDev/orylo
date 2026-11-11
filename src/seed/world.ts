@@ -29,7 +29,9 @@ import { POLICY_PACK, SUPERSEDED_BILLING_V1 } from "@/policy/pack";
 import { BUILTIN_WORKFLOWS } from "@/workflows/definitions";
 import { sha256Hex } from "@/domain/crypto";
 
-export const DEMO_PASSWORD = "OryloDemo!2026";
+import { DEFAULT_DEMO_PASSWORD, getDemoPassword } from "./demo-password";
+export { DEFAULT_DEMO_PASSWORD };
+export const DEMO_PASSWORD = getDemoPassword();
 const DAY = 86_400_000;
 const ago = (days: number) => new Date(Date.now() - days * DAY);
 

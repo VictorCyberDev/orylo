@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "./test";
 import { signIn, PASSWORD } from "./helpers";
 
 /**

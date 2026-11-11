@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 import { login, logout } from "./helpers";
 
 const shot = (n: string) => `docs/evidence/screenshots/${n}.png`;

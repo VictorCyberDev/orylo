@@ -1,0 +1,21 @@
+name: Worker tick
+# Optional free scheduler for serverless hosting (JOB_WORKER=request): calls the durable-job tick endpoint every 5 minutes.
+# Inactive until the owner sets repository VARIABLE TICK_URL (e.g. https://<site>/api/internal/jobs/tick) and SECRET CRON_SECRET.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+jobs:
+  tick:
+    if: ${{ vars.TICK_URL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Call the tick endpoint
+        env:
+          TICK_URL: ${{ vars.TICK_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          code=$(curl -sS -m 60 -o /tmp/tick.json -w '%{http_code}' -X POST -H "Authorization: Bearer ${CRON_SECRET}" "${TICK_URL}")
+          cat /tmp/tick.json; echo
+          test "$code" = "200"

@@ -9,6 +9,7 @@ import { rateLimit } from "@/domain/rate-limit";
 import { sha256Hex } from "@/domain/crypto";
 import { findCase } from "@/domain/cases";
 import type { Ctx } from "@/domain/context";
+import { kickJobs } from "@/jobs/piggyback";
 
 export function json(body: unknown, status = 200, extra: Record<string, string> = {}) {
   return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store", ...extra } });
@@ -17,6 +18,7 @@ export function json(body: unknown, status = 200, extra: Record<string, string> 
 /** Uniform error envelope: {error:{code,message}}; never leaks stack traces or internals. */
 export async function handle(req: NextRequest, fn: (requestId: string) => Promise<NextResponse>) {
   const requestId = req.headers.get("x-request-id")?.slice(0, 64) ?? crypto.randomUUID();
+  kickJobs(); // serverless only (JOB_WORKER=request); no-op otherwise
   try {
     const res = await fn(requestId);
     res.headers.set("x-request-id", requestId);

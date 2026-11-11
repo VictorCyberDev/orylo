@@ -2,7 +2,9 @@
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { timingSafeEqual } from "node:crypto";
 import { logError } from "@/lib/log";
+import { kickJobs } from "@/jobs/piggyback";
 import { clientIp } from "@/lib/ip";
 import { ZodError } from "zod";
 import { and, eq } from "drizzle-orm";
@@ -41,6 +43,7 @@ import { processErasure, requestErasure } from "@/domain/privacy";
 import { requeueDead } from "@/jobs/queue";
 import { resolveGrant } from "@/domain/channel";
 import { sha256Hex } from "@/domain/crypto";
+import { getDemoPassword } from "@/seed/demo-password";
 import * as admin from "@/domain/admin";
 import { changePlan, cancelSubscription } from "@/domain/billing";
 import {
@@ -59,6 +62,7 @@ type R = Promise<ActionResult>;
 type Out = { message?: string; redirectTo?: string; data?: unknown } | void;
 
 async function guard(fn: () => Promise<Out>): R {
+  kickJobs();
   try {
     const r = (await fn()) ?? {};
     revalidatePath("/", "layout");
@@ -827,4 +831,23 @@ export async function retryJobAction(_p: ActionResult, fd: FormData): R {
     await audit(db, ctx, { action: "job.requeue", targetType: "job", targetId: str(fd, "id") });
     return { message: "Job queued again. The worker will pick it up shortly." };
   });
+}
+
+/** Reviewer access: the owner shares REVIEWER_ACCESS_CODE privately with organizers; the shared demo password is never on a public page. */
+export async function revealReviewerAccessAction(
+  _p: ActionResult & { password?: string },
+  fd: FormData,
+): Promise<ActionResult & { password?: string }> {
+  try {
+    await rateLimit(db, `reviewer:${sha256Hex(clientIp(await headers())).slice(0, 16)}`, 10, 600);
+  } catch {
+    return { ok: false, error: "Too many attempts. Please wait a few minutes." };
+  }
+  const expected = process.env.REVIEWER_ACCESS_CODE;
+  const given = str(fd, "code");
+  const a = Buffer.from(sha256Hex(given));
+  const b = Buffer.from(sha256Hex(expected ?? ""));
+  const ok = !!expected && expected.length >= 8 && a.length === b.length && timingSafeEqual(a, b);
+  if (!ok) return { ok: false, error: "That code isn't valid." };
+  return { ok: true, password: getDemoPassword() };
 }

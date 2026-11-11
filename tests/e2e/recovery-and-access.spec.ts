@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "./test";
 import { signIn, PASSWORD } from "./helpers";
 import { newCustomer, latestResetToken, type Fixture } from "./fixtures";
 

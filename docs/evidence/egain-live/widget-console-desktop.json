@@ -1,0 +1,16 @@
+{
+  "ranAt": "2026-11-11T13:29:45.404Z",
+  "origin": "https://orylo-live.example",
+  "viewport": {
+    "name": "desktop",
+    "width": 1280,
+    "height": 860
+  },
+  "entries": [
+    {
+      "kind": "requestfailed",
+      "text": "https://apps.egain.services/ai-agent-connector-standalone/web/static/hook/standalone/TMPRODB32813926/custom.js net::ERR_BLOCKED_BY_ORB"
+    }
+  ],
+  "unexpected": []
+}

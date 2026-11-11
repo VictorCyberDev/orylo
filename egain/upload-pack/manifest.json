@@ -1,0 +1,78 @@
+{
+  "generatedFrom": "src/policy/pack.ts",
+  "count": 12,
+  "documents": [
+    {
+      "file": "cancellation-policy",
+      "title": "Cancellation Policy",
+      "key": "cancellation-policy",
+      "sha256OfSourceText": "b69230540b47df3d68f5d5c8aa7e49207e657fc7b5139f001b50cf0ee48c6d9f"
+    },
+    {
+      "file": "billing-policy",
+      "title": "Billing Policy",
+      "key": "billing-policy",
+      "sha256OfSourceText": "22964e90777ac65af9dd56a57dd2683078165127da75e402e20ccc3a3d9e0bc5"
+    },
+    {
+      "file": "duplicate-charge-investigation",
+      "title": "Duplicate Charge Investigation",
+      "key": "duplicate-charge-investigation",
+      "sha256OfSourceText": "f3a376a15e6e4c7acb419e9ced1129a13c97a625a6b3db3391717731bb4bf4ef"
+    },
+    {
+      "file": "refund-review-rules",
+      "title": "Refund Review Rules",
+      "key": "refund-review-rules",
+      "sha256OfSourceText": "7aa6623bacaec045cd477e4907e07baef2d235023b5a6a9625256fc858e206cd"
+    },
+    {
+      "file": "identity-verification",
+      "title": "Customer Identity Verification",
+      "key": "identity-verification",
+      "sha256OfSourceText": "4890921ab84a7a0606ccbaaf03b6b220c55d6262ef54ff12546a0c72d3d5c2d1"
+    },
+    {
+      "file": "consent-requirements",
+      "title": "Consent Requirements",
+      "key": "consent-requirements",
+      "sha256OfSourceText": "6d5572aec11e6eaee3b4aa94b853db550534f68ca0c4f403d573b60b4c3fe310"
+    },
+    {
+      "file": "escalation-policy",
+      "title": "Escalation Policy",
+      "key": "escalation-policy",
+      "sha256OfSourceText": "7abe213b3d8a5de2a05d6faa4c9d947be47511a52d5a048f4b8c395cda49b4dd"
+    },
+    {
+      "file": "error-failure-handling",
+      "title": "Error and Failure Handling",
+      "key": "error-failure-handling",
+      "sha256OfSourceText": "76d390e05983a55d7bd4728f8ee4c81e3118e2587efe3f65dcdb9acac07de6f1"
+    },
+    {
+      "file": "data-handling",
+      "title": "Data Handling Rules",
+      "key": "data-handling",
+      "sha256OfSourceText": "e0e466c770e9e69dab88b072edfb4759e3fb4e9fc5d8c9e0a5e3657c674f09ba"
+    },
+    {
+      "file": "service-appointment-policy",
+      "title": "Service Appointment Policy",
+      "key": "service-appointment-policy",
+      "sha256OfSourceText": "87b096767238bbcb0a5a6bdc5d0e86405339df20ee8892d2f4567988c0fc434e"
+    },
+    {
+      "file": "warranty-policy",
+      "title": "Device Warranty Policy",
+      "key": "warranty-policy",
+      "sha256OfSourceText": "88e022336a498a7379cd07ed66a202fb3a4b4b164d446c9b34780aa70f2746f8"
+    },
+    {
+      "file": "policy-authority-manifest",
+      "title": "Policy Authority and Version Manifest",
+      "key": "policy-authority-manifest",
+      "sha256OfSourceText": "36b64c2ebe349d7b215f0e25dafb3f7caf92ed4d95f5feb311df1d3bd5528b4a"
+    }
+  ]
+}

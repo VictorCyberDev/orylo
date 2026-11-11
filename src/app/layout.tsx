@@ -5,6 +5,8 @@ import { headers } from "next/headers";
 import "./globals.css";
 import { brand } from "@/config/brand";
 import { ToastProvider } from "@/components/client";
+import { EgainChat } from "@/components/egain-chat";
+import { getEgainConfig } from "@/config/egain";
 
 export const metadata: Metadata = {
   metadataBase: new URL(brand.siteUrl),
@@ -36,6 +38,7 @@ export const dynamic = "force-dynamic";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const eg = getEgainConfig();
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
       <head>
@@ -46,6 +49,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           Skip to main content
         </a>
         <ToastProvider>{children}</ToastProvider>
+        <EgainChat
+          config={{
+            enabled: eg.enabled,
+            agentId: eg.agentId,
+            serverUrl: eg.serverUrl,
+            scriptUrl: eg.scriptUrl,
+            nonce,
+          }}
+        />
       </body>
     </html>
   );
