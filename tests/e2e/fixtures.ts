@@ -3,10 +3,8 @@
  * account, earlier cancellation, charge) so tests never depend on — or disturb — the shared demo seed, and can be re-run.
  * Uses the real database and the real domain code (not mocks).
  */
-import { existsSync } from "node:fs";
 import { randomBytes } from "node:crypto";
-if (!process.env.DATABASE_URL)
-  for (const f of [".env.local", ".env"]) if (existsSync(f)) process.loadEnvFile(f);
+import "./env";
 
 import { and, eq } from "drizzle-orm";
 import { hashPassword } from "better-auth/crypto";

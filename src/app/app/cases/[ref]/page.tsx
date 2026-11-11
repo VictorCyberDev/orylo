@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { requireStaff } from "@/auth/session";
 import { db } from "@/db";
 import { getCaseView } from "@/domain/case-view";
-import { listMembers } from "@/domain/admin";
+import { listAssignableMembers } from "@/domain/admin";
 import { AppError } from "@/domain/errors";
 import { can } from "@/domain/rbac";
 import { AutoRefresh } from "@/components/client";
@@ -30,11 +30,7 @@ export default async function OperatorCase({ params }: { params: Promise<{ ref: 
     if (e instanceof AppError && e.code === "NOT_FOUND") notFound();
     throw e;
   });
-  const members = can(s.role, "case.assign")
-    ? (await listMembers(db, s.ctx).catch(() => []))
-        .filter((m) => m.status === "active")
-        .map((m) => ({ userId: m.userId, name: m.name }))
-    : [];
+  const members = can(s.role, "case.assign") ? await listAssignableMembers(db, s.ctx) : [];
   const canWrite = can(s.role, "case.write");
   const c = view.case;
   const cust = view.customer as { name: string; email: string; externalRef: string };

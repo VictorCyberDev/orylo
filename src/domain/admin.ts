@@ -59,8 +59,19 @@ export async function updateOrganization(db: DbOrTx, ctx: Ctx, raw: unknown) {
   const a = staff(ctx);
   requirePermission(a.role, "org.manage");
   const input = OrgSettingsSchema.parse(raw);
-  if (input.branding && (input.branding.accent || input.branding.displayName))
-    await assertEntitlement(db, ctx.orgId, "customBranding");
+  if (input.branding) {
+    // The form always posts the current branding back. Only a CHANGE to branding needs the entitlement; otherwise a plan
+    // without custom branding could never save any other setting (found by the browser journey).
+    const [cur] = await db
+      .select({ branding: organizations.branding })
+      .from(organizations)
+      .where(eq(organizations.id, ctx.orgId));
+    const before = (cur?.branding ?? {}) as { accent?: string; displayName?: string };
+    const changed =
+      (input.branding.accent ?? "") !== (before.accent ?? "") ||
+      (input.branding.displayName ?? "") !== (before.displayName ?? "");
+    if (changed) await assertEntitlement(db, ctx.orgId, "customBranding");
+  }
   const [o] = await db
     .update(organizations)
     .set({
@@ -95,6 +106,18 @@ export async function listMembers(db: DbOrTx, ctx: Ctx) {
     .from(memberships)
     .innerJoin(users, eq(users.id, memberships.userId))
     .where(eq(memberships.organizationId, ctx.orgId))
+    .orderBy(asc(users.name));
+}
+
+/** Who a case can be assigned to: names only (no emails/roles), for anyone allowed to assign cases — not just member managers. */
+export async function listAssignableMembers(db: DbOrTx, ctx: Ctx) {
+  const a = staff(ctx);
+  requirePermission(a.role, "case.assign");
+  return db
+    .select({ userId: users.id, name: users.name })
+    .from(memberships)
+    .innerJoin(users, eq(users.id, memberships.userId))
+    .where(and(eq(memberships.organizationId, ctx.orgId), eq(memberships.status, "active")))
     .orderBy(asc(users.name));
 }
 

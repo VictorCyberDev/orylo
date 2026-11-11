@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { logError } from "@/lib/log";
 import { clientIp } from "@/lib/ip";
 import { ZodError } from "zod";
@@ -172,7 +173,9 @@ export async function signUpForInviteAction(_p: ActionResult, fd: FormData): R {
         );
       });
     await admin.acceptInvitation(db, token, { id: res.user.id, email });
-    return { redirectTo: "/app", message: "Welcome aboard." };
+    // Server-side redirect, not `redirectTo`: this action revalidates the page, which now (correctly) reports the
+    // invitation as used and would unmount the form before a client-side redirect could run.
+    redirect("/app");
   });
 }
 export async function acceptInviteSignedInAction(_p: ActionResult, fd: FormData): R {

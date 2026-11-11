@@ -12,6 +12,7 @@ import {
   resolutionCases,
   scheduledJobs,
   workflowExecutions,
+  simBillingReviews,
 } from "@/db/schema";
 import {
   backoffMs,
@@ -24,7 +25,7 @@ import {
 } from "@/jobs/queue";
 import { runDueJobs } from "@/jobs/runner";
 import { expireStaleConsents, purgeRetention, runMaintenance } from "@/jobs/maintenance";
-import { confirmAction } from "@/domain/actions";
+import { confirmAction, decideApproval } from "@/domain/actions";
 import { addEvidence } from "@/domain/uploads";
 import { BUILTIN_WORKFLOWS } from "@/workflows/definitions";
 import { publishWorkflowVersion, saveWorkflowDraft } from "@/domain/admin";
@@ -167,6 +168,35 @@ describe("autonomous recovery of actions (no human invokes anything)", () => {
     expect((await acct(w.orgs.nf, "NF-100234")).status).toBe("CANCELLED");
     expect((await acct(w.orgs.nf, "NF-100234")).version).toBe(2); // exactly one mutation
     expect((await caseState(row.id)).state).toBe("READY_FOR_ACTION"); // billing review still to confirm
+  });
+
+  it("after a person approves a >threshold step, a job runs it — the customer does not have to come back and click again", async () => {
+    const { ctx, row, actions } = await openRecoveryCase(w, "priya");
+    const review = actions.find((a) => a.operation === "subscription.create_billing_review")!;
+    expect((await confirmAction(db, ctx, review.id, true)).status).toBe("AWAITING_APPROVAL");
+    await decideApproval(db, op(w, "nfApprover"), review.id, true, "Within policy");
+    expect(await db.select().from(simBillingReviews)).toHaveLength(0); // approval alone does not run it inline
+    await dueNow();
+    await runDueJobs();
+    expect(await db.select().from(simBillingReviews)).toHaveLength(1);
+    const [req] = await db.select().from(actionRequests).where(eq(actionRequests.id, review.id));
+    expect(req.status).toBe("SUCCEEDED");
+    expect((await caseState(row.id)).state).not.toBe("AWAITING_APPROVAL");
+    // idempotent: another approval click / duplicate job does not create a second review
+    await expect(decideApproval(db, op(w, "nfApprover"), review.id, true)).rejects.toThrow(
+      /not waiting for approval/,
+    );
+    await dueNow();
+    await runDueJobs();
+    expect(await db.select().from(simBillingReviews)).toHaveLength(1);
+  });
+
+  it("a declined approval enqueues nothing", async () => {
+    const { ctx, actions } = await openRecoveryCase(w, "priya");
+    const review = actions.find((a) => a.operation === "subscription.create_billing_review")!;
+    await confirmAction(db, ctx, review.id, true);
+    await decideApproval(db, op(w, "nfApprover"), review.id, false, "No");
+    expect((await jobs()).filter((j) => j.dedupeKey === `action-approved:${review.id}`)).toHaveLength(0);
   });
 
   it("timeout-after-apply: the scheduled retry REPLAYS (no double application)", async () => {

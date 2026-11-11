@@ -10,10 +10,31 @@ function createPool(): Pool {
   return new Pool({ connectionString: url, max: Number(process.env.DB_POOL_MAX ?? 20) });
 }
 
-export const pool: Pool = globalForDb.__oryloPool ?? createPool();
-if (process.env.NODE_ENV !== "production") globalForDb.__oryloPool = pool;
+/**
+ * The pool and Drizzle client are created on FIRST USE, not on import. `next build` imports every route module to
+ * collect page data; it must not need a database (or DATABASE_URL) just to compile. Behaviour at runtime is unchanged:
+ * the first query throws the same clear error if DATABASE_URL is missing.
+ */
+function lazy<T extends object>(make: () => T): T {
+  let inst: T | undefined;
+  const get = () => (inst ??= make());
+  return new Proxy({} as T, {
+    get(_t, prop) {
+      const target = get();
+      const v = Reflect.get(target, prop, target);
+      return typeof v === "function" ? v.bind(target) : v;
+    },
+    has: (_t, prop) => Reflect.has(get(), prop),
+  });
+}
 
-export const db: NodePgDatabase<typeof schema> = drizzle(pool, { schema });
+function getPool(): Pool {
+  if (!globalForDb.__oryloPool) globalForDb.__oryloPool = createPool();
+  return globalForDb.__oryloPool;
+}
+export const pool: Pool = lazy(getPool);
+
+export const db: NodePgDatabase<typeof schema> = lazy(() => drizzle(getPool(), { schema }));
 export type Db = typeof db;
 /** A transaction handle OR the root db: domain functions accept either so they compose inside one tx. */
 export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];

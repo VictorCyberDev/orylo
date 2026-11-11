@@ -99,7 +99,7 @@ test.describe("Scenario C/F in the browser", () => {
     await page.getByLabel(/^Email/).fill("elena.rossi@customer.example");
     await page.getByLabel(/^Password/).fill("OryloDemo!2026");
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/localhost:3000\/portal$/, { timeout: 20_000 });
+    await expect(page).toHaveURL(/^https?:\/\/localhost:\d+\/portal$/, { timeout: 20_000 });
   });
   test("wrong password shows a clear, non-leaky error", async ({ page }) => {
     await page.goto("/sign-in");

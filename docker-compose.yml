@@ -1,6 +1,26 @@
-# Local Postgres for Orylo. NOTE: this file was authored but could not be exercised in the
-# build environment (no Docker daemon there). Tests were run against a native PostgreSQL 16.
+# Orylo: PostgreSQL + the application image. DEMONSTRATION values only — every secret below is a throwaway placeholder
+# for a local run. Real deployments inject their own secrets (docs/operations/deployment-contract.md).
+#   docker compose up --build           # db + app (migrations run on start)
+#   docker compose run --rm app seed    # load the synthetic demo world (optional)
 services:
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports: ["3000:3000"]
+    environment:
+      DATABASE_URL: postgres://orylo:orylo@db:5432/orylo
+      BETTER_AUTH_SECRET: compose-demo-only-better-auth-secret-0123456789abcdef
+      BETTER_AUTH_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
+      RECEIPT_SIGNING_KEY: compose-demo-only-receipt-signing-key-0123456789
+      EVIDENCE_ENCRYPTION_KEY: Y29tcG9zZS1kZW1vLWV2aWRlbmNlLWtleS0wMTIzNDU=
+      CRON_SECRET: compose-demo-only-cron-secret-0123456789abcdef
+      DEMO_MODE: "true"
+      ALLOW_DEMO_IN_PRODUCTION: "yes"
+      TRUSTED_PROXY_HOPS: "0"
+
   db:
     image: postgres:16-alpine
     environment:

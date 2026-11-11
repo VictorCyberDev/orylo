@@ -22,6 +22,8 @@ export const HANDLERS: Record<JobKind, Handler> = {
     if (!j.orgId) throw new Error("action.retry needs an organization");
     try {
       await executeAction(rootDb, systemCtx(j.orgId, "worker"), String(j.payload.requestId));
+      if (typeof j.payload.caseId === "string")
+        await advance(rootDb, systemCtx(j.orgId, "worker"), j.payload.caseId).catch(() => undefined);
     } catch (e) {
       // A domain refusal (consent expired, state changed, policy replaced, case moved on) is a TERMINAL, correct outcome
       // — retrying it would never help. Infrastructure errors propagate and are retried with backoff.

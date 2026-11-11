@@ -33,7 +33,7 @@ Actions on the discrepancy (Owner action): ask in the hackathon Discord or at ps
 | 5 | Process workflow is connected to an intent | `BLOCKED — no eGain tenant access in this environment` (intent I-02 defined) | `egain/intents.md` |
 | 6 | Demo link works | `BLOCKED — no eGain tenant access in this environment` | `egain/published-agent-acceptance-log.md`, section 1 |
 | 7 | Description and one-minute video are complete | Description: Prepared (draft, 139 words, with a 102-word fallback). Video: script prepared, not recorded (Owner action once the agent is published) | `docs/hackathon/submission-description.md`, `docs/hackathon/demo-script-60s.md` |
-| 8 | Entry is submitted before the deadline | Owner action (internal target 2026-11-12 23:30 Africa/Lagos) | https://www.egain.com/ai-agent-hackathon-project-submission/ |
+| 8 | Entry is submitted before the deadline | Owner action. Official deadline per the rules page: November 15, 11:59 PM PST (verified 2026-11-11; the owner's earlier internal target of 2026-11-12 23:30 Africa/Lagos is a self-imposed buffer, not the rule) | https://www.egain.com/ai-agent-hackathon-project-submission/ |
 
 ## Solution requirements
 
@@ -57,7 +57,7 @@ Actions on the discrepancy (Owner action): ask in the hackathon Discord or at ps
 | Description, up to 150 words | Prepared (139 words full; 102 words fallback) | Choose the version that is true; see sentence table |
 | One-minute video: content-based answer, at least one workflow, most distinctive feature | Script prepared, not recorded. Recording is `BLOCKED — no eGain tenant access in this environment` | "Do not record unless true" rule applies |
 | Confirmation that all required workflows were published and tested | `BLOCKED — no eGain tenant access in this environment` | Tick only what `egain/published-agent-acceptance-log.md` section 7 supports |
-| Disclosure of material pre-existing templates, code, or third-party assets | Owner action | Orylo is pre-existing or independent code; describe it accurately (suggested text in `submission-description.md`). Also disclose any template taken from the hands-on lab or Workflow Library |
+| Disclosure of material pre-existing templates, code, or third-party assets | Owner action | Orylo is NOT pre-existing: first commit 2026-11-10, written during the competition period with AI coding assistance (permitted by the rules). Use the corrected text in `submission-description.md`. Also disclose any template taken from the hands-on lab or Workflow Library |
 
 ## Content and conduct
 

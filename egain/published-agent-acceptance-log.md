@@ -8,6 +8,16 @@ Rules for filling it in:
 - A row is complete only when the Evidence column holds something another person can check (a timestamp, a receipt number, a screenshot filename kept outside the repository).
 - Do not put API keys, customer tokens or real personal data in this file.
 
+## 0. Access determination (re-checked 2026-11-11)
+
+Checked before declaring the blocker again, so it is a finding and not an assumption:
+
+- Environment variables: no eGain tenant, credential, API key or URL is set in the build environment.
+- Connectors: the connector list is empty for "egain"/"knowledge"/"customer service", and the connector registry has no eGain connector.
+- Public rules page (`https://www.egain.com/ai-agent-hackathon/`, fetched 2026-11-11): access is "an existing eGain account or … a trial account with a working email address", and "participation is limited … first-come, first-served". Creating a trial account requires the owner's own email address and acceptance of eGain's terms. This environment will not create accounts, enter credentials or accept terms on the owner's behalf.
+
+**Result: eGain commissioning is BLOCKED** on exactly one thing — the owner creating or using their own eGain trial/account and publishing the agent. Everything on Orylo's side that the eGain agent calls (five HTTP action endpoints, scoped API keys, consent wording, receipts, escalation records) is built and contract-tested in this repository against the OpenAPI document, and nothing in this log claims otherwise. No eGain feature, screenshot, published link or recorded video exists. Use `configuration-guide.md` and `test-scripts.md` once access exists, and fill sections 1–7 only with what is actually observed.
+
 ## 1. Publication record
 
 | Field | Value |

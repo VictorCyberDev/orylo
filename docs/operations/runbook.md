@@ -17,6 +17,10 @@ against a hosted environment.
 
 Never commit real values. `.env.local` is git-ignored; `.env.example` holds placeholders only.
 
+## Deploy
+
+See `deployment-contract.md` for the verified container path, required environment, migration/rollback/backup and what remains unverified. The generic notes below predate it.
+
 ## Deploy (generic, unverified)
 1. Provision PostgreSQL 16 and set the variables above in the host's secret store.
 2. `npm ci && npm run build`.

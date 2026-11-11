@@ -860,6 +860,17 @@ export async function decideApproval(
         to: "READY_FOR_ACTION",
         message: "Approval was declined; the step will not run.",
       });
+    // The customer already gave exact-wording consent; once a person approves, nobody should have to come back and
+    // click again. A durable job runs the step (consent TTL, state hash and policy are re-checked at execution; if any
+    // no longer holds the step simply waits for the customer, who still sees it as ready to confirm).
+    if (granted)
+      await enqueueJob(tx, {
+        orgId: ctx.orgId,
+        kind: "action.retry",
+        payload: { requestId: req.id, caseId: caseRow.id },
+        dedupeKey: `action-approved:${req.id}`,
+        maxAttempts: 3,
+      });
     return { request: u, decision: granted ? "GRANTED" : "DECLINED", duplicate: false as const };
   });
 }
