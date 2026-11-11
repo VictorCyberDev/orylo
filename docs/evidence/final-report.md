@@ -119,7 +119,11 @@ CI runs (workflow `CI`, job `checks` = format, lint, typecheck, audit, DB tests,
 | 43003504350 | `248aa56` | success |
 | 43004783668 | `4cb3cd9` | success |
 | 43006665252 | `89feff1` | success — https://github.com/VictorCyberDev/orylo/actions/runs/43006665252 |
-FINAL_CI_PLACEHOLDER
+| 43012919115 | `f50af92` | success |
+| 43014152735 | `9fa5762` | **failure** — the new `container` job failed (git does not track the empty `public/` directory, so the image build found no `/app/public`); `checks` was not the cause. Reproduced on a clean clone and fixed |
+| 43015153150 | `3b74772` | **success — both jobs** (`checks` incl. 72 browser tests; `container`) — https://github.com/VictorCyberDev/orylo/actions/runs/43015153150 |
+
+**Verified revision: `3b74772`.** Commits after it change only this report (documentation); they are not separately re-verified by a code run beyond the CI run that GitHub starts for them.
 
 ## 16. Owner authorizations still required
 1. Create/choose a base branch (e.g. `main`) so a PR can be opened; confirm branch naming.
