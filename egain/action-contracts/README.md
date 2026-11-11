@@ -1,6 +1,6 @@
 # Action contracts
 
-Status: **Prepared in repo.** Registered in eGain: `BLOCKED — no eGain tenant access in this environment`. Tested from eGain: `BLOCKED — no eGain tenant access in this environment`.
+Status (2026-11-11): the API is **deployed** at `https://orylo-demo.vercel.app` and rejects unauthenticated calls from the public internet; **no eGain-originated call has been observed**. Earlier status: **Prepared in repo.** Registered in eGain: `BLOCKED — no eGain tenant access in this environment`. Tested from eGain: `BLOCKED — no eGain tenant access in this environment`.
 
 `openapi.yaml` is the contract for the five HTTP endpoints that the eGain AI Agent calls on Orylo, the independent backend. It was written as the specification for the engineer implementing the API. It parses as YAML and all of its `$ref` targets resolve (checked locally on 2026-11-10). It has not been run through an OpenAPI linter, has not been tested against a running server, and has not been imported anywhere.
 
@@ -14,7 +14,7 @@ Status: **Prepared in repo.** Registered in eGain: `BLOCKED — no eGain tenant 
 | 4 | `POST /api/v1/egain/cases/{caseReference}/escalations` | Record a callback request or email follow-up | API key + customer token |
 | 5 | `GET /api/v1/receipts/{receiptNo}/verify` | Public receipt check | none |
 
-API key: `Authorization: Bearer <ORYLO_API_KEY>` with scope `egain:actions`. Customer token: header `X-Customer-Token`. Base URL: `https://<ORYLO_HOST>` (placeholder; no host exists in this package).
+API key: `Authorization: Bearer <ORYLO_API_KEY>` with scope `egain:actions`. Customer token: header `X-Customer-Token`. Base URL: `https://orylo-demo.vercel.app`. To create the key: open `/demo`, enter the reviewer code, sign in as the owner (Olivia Park) → Admin → API keys → create a key (shown once) → store it in eGain's secret/credential store, never in a chat variable or the repository.
 
 HTTP status codes in the YAML are a **proposed** mapping. The error body (`{"error":{"code","message"}}`) is the contract. The eGain workflow should branch on `error.code`, not on the HTTP status.
 

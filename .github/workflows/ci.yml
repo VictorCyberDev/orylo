@@ -51,8 +51,15 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright Chromium (bounded and retried)
+        # Runs 17 and 18 failed only at this step after ~10 minutes of package-mirror stalls; each attempt is now bounded.
+        run: |
+          for attempt in 1 2 3; do
+            if timeout 240 npx playwright install --with-deps chromium; then exit 0; fi
+            echo "attempt $attempt failed or timed out; retrying"
+            sleep 5
+          done
+          exit 1
       - name: Browser tests (journeys, axe a11y, responsive, API contract)
         run: npm run test:e2e
       - uses: actions/upload-artifact@v4

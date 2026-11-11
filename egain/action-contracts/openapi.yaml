@@ -7,8 +7,9 @@ info:
     Contract for the Failed Cancellation & Billing Recovery hackathon agent.
     All data is synthetic (fictional provider "Northfield Digital").
 
-    Status of this document: written by the project as the contract for the engineer who is implementing
-    the API. It has not been run against a live server, and has not been imported into an eGain tenant.
+    Status of this document (2026-11-11): the API is implemented, contract-tested locally, and deployed at
+    https://orylo-demo.vercel.app where unauthenticated and wrongly-keyed calls are rejected with the envelope below
+    (verified from the public internet). It has NOT been called by eGain: no eGain-originated call has been observed.
 
     Authentication has two layers on every /api/v1/egain/* call:
     1. `Authorization: Bearer <ORYLO_API_KEY>`, an Orylo-issued key with scope `egain:actions`, stored in
@@ -20,11 +21,11 @@ info:
     mapping that the implementing engineer must confirm.
 servers:
   - url: https://{host}
-    description: Replace with the deployed Orylo host. Placeholder only.
+    description: The deployed synthetic demo host. Replace for any other deployment.
     variables:
       host:
-        default: ORYLO_HOST
-        description: Placeholder. No deployed host exists in this package.
+        default: orylo-demo.vercel.app
+        description: Deployed 2026-11-11 (Vercel Hobby, dedicated Neon database). Synthetic data only.
 tags:
   - name: Session
   - name: Case

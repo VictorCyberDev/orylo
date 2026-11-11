@@ -168,7 +168,8 @@ test.describe("public site: reviewer access and the customer journey", () => {
     const other = await priya.goto(`${BASE}/portal/cases/${ref}`);
     expect(other?.status()).toBe(404);
     await priya.goto(`${BASE}/app`);
-    await expect(priya).not.toHaveURL(/\/app$/);
+    await expect(priya).toHaveURL(/\/sign-in\?next=/); // redirected away; no operator data is ever rendered for a customer
+    await expect(priya.getByText("Command center")).toHaveCount(0);
 
     // operator sees the same state
     const ana = await (await browser.newContext()).newPage();
