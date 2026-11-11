@@ -289,6 +289,8 @@ export const customers = pgTable(
       .$type<{ notifyEmail: boolean; notifyInApp: boolean }>()
       .notNull()
       .default({ notifyEmail: false, notifyInApp: true }),
+    /** Set when the customer's personal data was erased on request (profile anonymized, uploads deleted). */
+    anonymizedAt: ts("anonymized_at"),
     createdAt: createdAt(),
   },
   (t) => [
@@ -1094,6 +1096,75 @@ export const rateLimits = pgTable(
     count: integer("count").notNull().default(0),
   },
   (t) => [uniqueIndex("rate_limits_key_window_uq").on(t.key, t.windowStart)],
+);
+
+/** Better Auth rate-limit storage (shared across instances; replaces its in-memory default). */
+export const authRateLimits = pgTable("auth_rate_limits", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
+
+/**
+ * Durable work queue for everything that must happen later without a human: workflow timeouts, action retries,
+ * maintenance (retention, expiry). Claimed with FOR UPDATE SKIP LOCKED + a lease, so any number of workers/instances
+ * can run safely and a crashed worker's job is reclaimed when its lease expires.
+ */
+export const scheduledJobs = pgTable(
+  "scheduled_jobs",
+  {
+    id: pk(),
+    /** null = platform-level job (maintenance). */
+    organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
+    runAt: ts("run_at").notNull().defaultNow(),
+    status: text("status").notNull().default("PENDING"), // PENDING | RUNNING | SUCCEEDED | DEAD
+    attempts: integer("attempts").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(5),
+    lockedBy: text("locked_by"),
+    lockedUntil: ts("locked_until"),
+    lastError: text("last_error"),
+    /** Enqueueing the same key twice is a no-op (idempotent scheduling). */
+    dedupeKey: text("dedupe_key"),
+    createdAt: createdAt(),
+    startedAt: ts("started_at"),
+    finishedAt: ts("finished_at"),
+  },
+  (t) => [
+    uniqueIndex("scheduled_jobs_dedupe_uq")
+      .on(t.dedupeKey)
+      .where(sql`${t.dedupeKey} is not null`),
+    index("scheduled_jobs_due_idx").on(t.status, t.runAt),
+  ],
+);
+
+/** Customer privacy requests (export is instant; deletion is processed by staff and leaves an audit trail). */
+export const dataRequests = pgTable(
+  "data_requests",
+  {
+    id: pk(),
+    organizationId: orgId().references(() => organizations.id, { onDelete: "cascade" }),
+    customerId: uuid("customer_id").notNull(),
+    kind: text("kind").notNull(), // export | deletion
+    status: text("status").notNull().default("PENDING"), // PENDING | COMPLETED | REJECTED
+    reason: text("reason"),
+    processedBy: text("processed_by"),
+    processedAt: ts("processed_at"),
+    note: text("note"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.customerId, t.organizationId],
+      foreignColumns: [customers.id, customers.organizationId],
+    }),
+    uniqueIndex("data_requests_one_pending_uq")
+      .on(t.customerId, t.kind)
+      .where(sql`${t.status} = 'PENDING'`),
+    index("data_requests_org_idx").on(t.organizationId, t.status),
+  ],
 );
 
 // ---------------------------------------------------------------- SYNTHETIC external provider (demo adapter backend)

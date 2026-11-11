@@ -24,7 +24,8 @@
     "test:e2e": "playwright test",
     "demo:reset": "tsx scripts/reset.ts && tsx scripts/seed.ts",
     "check": "npm run typecheck && npm run lint && npm test",
-    "egain:export": "tsx scripts/egain-export.ts"
+    "egain:export": "tsx scripts/egain-export.ts",
+    "worker": "tsx scripts/worker.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.3.1",

@@ -15,6 +15,20 @@
       "when": 1794316859296,
       "tag": "0001_append_only_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794392878133,
+      "tag": "0002_jobs_privacy_authrl",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794392878949,
+      "tag": "0003_redaction_path",
+      "breakpoints": true
     }
   ]
 }

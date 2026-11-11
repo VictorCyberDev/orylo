@@ -4,6 +4,7 @@
  * resumed by `advance()` when the awaited thing happens (customer info, consent→action→verification).
  * It orchestrates; it never decides what is *allowed* — that is always the Action Gateway + policy rules.
  */
+import { backoffMs, enqueueJob } from "@/jobs/queue";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -276,6 +277,7 @@ export async function advance(db: DbOrTx, ctx: Ctx, caseIdOrRef: string) {
       }
       current = r.next;
     }
+    if (status === "WAITING") await scheduleWake(tx, ctx.orgId, exec.id, caseRow.id, spec, current, wctx);
     await tx
       .update(workflowExecutions)
       .set({
@@ -288,6 +290,43 @@ export async function advance(db: DbOrTx, ctx: Ctx, caseIdOrRef: string) {
       .where(eq(workflowExecutions.id, exec.id));
     return { status, currentNode: current };
   });
+}
+
+/**
+ * Durable scheduling: a waiting execution that has a time-based exit (await timeout, provider retry) enqueues the job
+ * that will wake it. Idempotent (dedupe key per execution/node/attempt) so repeated advances never pile up jobs.
+ */
+async function scheduleWake(
+  tx: DbOrTx,
+  orgId: string,
+  executionId: string,
+  caseId: string,
+  spec: WorkflowSpec,
+  nodeId: string,
+  w: ExecCtx,
+) {
+  const node = spec.nodes.find((n) => n.id === nodeId);
+  if (!node) return;
+  if (node.type === "await_objectives" && node.timeoutHours && node.onTimeout) {
+    const since = w.waitingSince[node.id] ? Date.parse(w.waitingSince[node.id]) : Date.now();
+    await enqueueJob(tx, {
+      orgId,
+      kind: "workflow.advance",
+      payload: { caseId, nodeId },
+      runAt: new Date(since + node.timeoutHours * 3_600_000 + 1000),
+      dedupeKey: `wf-timeout:${executionId}:${node.id}`,
+    });
+  }
+  if (node.type === "lookup") {
+    const n = w.retries[node.id] ?? 1;
+    await enqueueJob(tx, {
+      orgId,
+      kind: "workflow.advance",
+      payload: { caseId, nodeId },
+      runAt: new Date(Date.now() + backoffMs(n)),
+      dedupeKey: `wf-retry:${executionId}:${node.id}:${n}`,
+    });
+  }
 }
 
 type NodeResult =

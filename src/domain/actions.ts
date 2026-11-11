@@ -44,6 +44,7 @@ import { requirePermission } from "./rbac";
 import { audit } from "./audit";
 import { notifyCustomer, notifyRoles } from "./notifications";
 import { escalateCase } from "./escalation";
+import { backoffMs, enqueueJob } from "@/jobs/queue";
 import {
   AdapterError,
   accountStateHash,
@@ -1358,6 +1359,15 @@ async function handleFailure(
     await transitionCase(tx, sys, caseRow.id, {
       to: "READY_FOR_ACTION",
       message: "Temporary problem — safe to retry.",
+    });
+    // Nobody has to remember to retry: a durable job re-runs it with backoff (same external key → replay, never repeat).
+    await enqueueJob(tx, {
+      orgId: ctx.orgId,
+      kind: "action.retry",
+      payload: { requestId: req.id },
+      runAt: new Date(Date.now() + backoffMs(attemptNo)),
+      dedupeKey: `action-retry:${req.id}:${attemptNo}`,
+      maxAttempts: 3,
     });
   } else if (ae.code === "STALE_STATE") {
     await transitionCase(tx, sys, caseRow.id, {
