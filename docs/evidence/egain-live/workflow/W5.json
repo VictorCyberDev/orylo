@@ -1,9 +1,9 @@
 {
-  "ranAt": "2026-11-11T14:53:22.576Z",
+  "ranAt": "2026-11-11T15:16:52.694Z",
   "id": "W5",
   "title": "email follow-up request is acknowledged without claiming a record was created",
   "customerSaid": "Please send me an email follow-up.",
-  "agentReply": "I see that you are asking for an email follow-up regarding your case. Customers can ask for a callback or an email follow-up, which creates a tracked case record with an owner queue.",
+  "agentReply": "I have noted your request for an email follow-up. This creates a tracked case record with an owner queue.",
   "verdict": "PASS",
   "failures": []
 }

@@ -1,9 +1,12 @@
 {
-  "ranAt": "2026-11-11T14:53:11.935Z",
+  "ranAt": "2026-11-11T15:16:43.544Z",
   "id": "W4",
   "title": "human escalation: callback AND email are offered (escalation-policy)",
   "customerSaid": "Can I get a callback instead?",
-  "agentReply": "I see that you are asking for a callback regarding your case. Customers can ask for a callback or an email follow-up, which creates a tracked case record with an owner queue.",
-  "verdict": "PASS",
-  "failures": []
+  "agentReply": "Please contact our customer care for more details.",
+  "verdict": "FAIL",
+  "failures": [
+    "missing /(callback|call back)/i",
+    "missing /email/i"
+  ]
 }
