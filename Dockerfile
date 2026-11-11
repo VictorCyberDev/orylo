@@ -15,6 +15,8 @@ RUN --mount=from=ca,target=/ca \
 FROM deps AS build
 WORKDIR /app
 COPY . .
+# `public/` may be empty (git does not track empty directories); the runtime stage copies it unconditionally.
+RUN mkdir -p public
 # The build needs no database and no secrets (production secret checks run at runtime, not build time).
 RUN npm run build
 
