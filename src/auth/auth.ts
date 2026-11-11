@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db";
-import { accounts, sessions, users, verifications } from "@/db/schema";
+import { accounts, authRateLimits, sessions, users, verifications } from "@/db/schema";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -33,7 +33,13 @@ export function createAuth(opts: { nextCookies?: boolean } = {}) {
     baseURL: process.env.BETTER_AUTH_URL ?? process.env.APP_URL ?? "http://localhost:3000",
     database: drizzleAdapter(db, {
       provider: "pg",
-      schema: { user: users, session: sessions, account: accounts, verification: verifications },
+      schema: {
+        user: users,
+        session: sessions,
+        account: accounts,
+        verification: verifications,
+        rateLimit: authRateLimits,
+      },
     }),
     emailAndPassword: {
       enabled: true,
@@ -42,6 +48,7 @@ export function createAuth(opts: { nextCookies?: boolean } = {}) {
       autoSignIn: true,
       requireEmailVerification: false,
       resetPasswordTokenExpiresIn: 60 * 30,
+      revokeSessionsOnPasswordReset: true, // a reset kills every existing session
       sendResetPassword: async ({ user, url }) => {
         if (!isProd) console.info(`[dev] password reset link for ${user.email}: ${url}`);
         // No email provider configured: nothing is sent. Production deployments must wire EmailAdapter.
@@ -54,6 +61,8 @@ export function createAuth(opts: { nextCookies?: boolean } = {}) {
     },
     rateLimit: {
       enabled: true,
+      storage: "database", // shared across instances (the in-memory default is per-process)
+      modelName: "rateLimit",
       window: 60,
       max: 60,
       customRules: {

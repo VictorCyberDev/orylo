@@ -4,10 +4,14 @@ import { requireCustomer } from "@/auth/session";
 import { db } from "@/db";
 import { customers } from "@/db/schema";
 import { PrefsForm } from "@/components/prefs-form";
+import { ErasureForm } from "@/components/privacy-forms";
+import { myDataRequests } from "@/domain/privacy";
+import { Badge, When } from "@/components/ui";
 import { Card, CardHeader, PageHeader } from "@/components/ui";
 export const metadata: Metadata = { title: "Profile & privacy" };
 export default async function Profile() {
   const c = await requireCustomer();
+  const requests = await myDataRequests(db, c.ctx);
   const [row] = await db
     .select()
     .from(customers)
@@ -37,6 +41,48 @@ export default async function Profile() {
           <CardHeader title="Notifications" />
           <div className="p-5">
             <PrefsForm notifyEmail={row.preferences.notifyEmail} notifyInApp={row.preferences.notifyInApp} />
+          </div>
+        </Card>
+        <Card>
+          <CardHeader
+            title="Your data rights"
+            description="You can download everything we hold about you, or ask for it to be erased."
+          />
+          <div className="space-y-5 p-5">
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                className="inline-flex min-h-11 items-center rounded-md border border-border-strong bg-surface px-4 text-sm font-medium hover:bg-surface-2"
+                href="/api/portal/export"
+                download
+              >
+                Download my data (JSON)
+              </a>
+              <span className="t-caption">
+                Includes your cases, history, outcomes and file names. Not available through a read-only link.
+              </span>
+            </div>
+            {requests.length ? (
+              <ul className="space-y-2 text-sm">
+                {requests.map((r) => (
+                  <li key={r.id} className="flex flex-wrap items-center gap-2">
+                    <Badge
+                      tone={
+                        r.status === "COMPLETED" ? "success" : r.status === "REJECTED" ? "neutral" : "warning"
+                      }
+                    >
+                      Erasure {r.status.toLowerCase()}
+                    </Badge>
+                    <When at={r.createdAt} />
+                    {r.note ? <span className="t-caption">— {r.note}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {requests.some((r) => r.status === "PENDING") ? (
+              <p className="t-caption">Your erasure request is waiting for review.</p>
+            ) : (
+              <ErasureForm />
+            )}
           </div>
         </Card>
         <Card>

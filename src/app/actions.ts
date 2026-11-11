@@ -36,6 +36,10 @@ import { addEvidence } from "@/domain/uploads";
 import { submitLead } from "@/domain/leads";
 import { markRead } from "@/domain/notifications";
 import { rateLimit } from "@/domain/rate-limit";
+import { processErasure, requestErasure } from "@/domain/privacy";
+import { requeueDead } from "@/jobs/queue";
+import { resolveGrant } from "@/domain/channel";
+import { sha256Hex } from "@/domain/crypto";
 import * as admin from "@/domain/admin";
 import { changePlan, cancelSubscription } from "@/domain/billing";
 import {
@@ -94,6 +98,10 @@ async function customerCtx(): Promise<Ctx> {
   assertCanAct(c.ctx.actor); // operator-issued links are read-only
   return { ...c.ctx, requestId: crypto.randomUUID() };
 }
+/** Per-actor write quota on top of authorization. Exceeding it yields a friendly RATE_LIMITED message. */
+async function quota(ctx: Ctx, bucket: string, limit: number, windowSec: number) {
+  await rateLimit(db, `q:${bucket}:${ctx.actor.id}`, limit, windowSec);
+}
 /** Whoever is signed in: staff or customer. Used for actions both audiences share (e.g. upload evidence). */
 async function anyCtx(): Promise<Ctx> {
   return (await getStaff())?.ctx ?? (await customerCtx());
@@ -105,6 +113,11 @@ export async function signInAction(_p: ActionResult, fd: FormData): R {
   const password = String(fd.get("password") ?? "");
   const next = str(fd, "next");
   try {
+    // Better Auth's own limiter guards its HTTP routes only; this action calls the API directly, so it is throttled here.
+    // Per client+email (guessing one account) and per email overall (distributed guessing). Failures AND successes count.
+    const ip = clientIp(await headers());
+    await rateLimit(db, `signin:${ip}:${sha256Hex(email).slice(0, 16)}`, 8, 60);
+    await rateLimit(db, `signin-acct:${sha256Hex(email).slice(0, 16)}`, 30, 900);
     const res = await getAuth().api.signInEmail({ body: { email, password }, headers: await headers() });
     const uid = res.user.id;
     const [m] = await db
@@ -134,6 +147,8 @@ export async function signInAction(_p: ActionResult, fd: FormData): R {
           : "/";
     return { ok: true, redirectTo: dest };
   } catch (e) {
+    if (e instanceof AppError && e.code === "RATE_LIMITED")
+      return { ok: false, error: "Too many sign-in attempts. Please wait a minute and try again." };
     const msg =
       (e as { body?: { message?: string }; status?: number }).status === 429
         ? "Too many attempts. Please wait a minute and try again."
@@ -168,6 +183,39 @@ export async function acceptInviteSignedInAction(_p: ActionResult, fd: FormData)
     return { redirectTo: "/app", message: "Invitation accepted." };
   });
 }
+export async function openAccessLinkAction(_p: ActionResult, fd: FormData): R {
+  try {
+    await rateLimit(db, `access-link:${clientIp(await headers())}`, 30, 600);
+    const g = await resolveGrant(db, str(fd, "token"));
+    (await cookies()).set(GRANT_COOKIE, str(fd, "token"), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production" && (process.env.APP_URL ?? "").startsWith("https://"),
+      path: "/",
+      maxAge: Math.max(60, Math.floor((g.expiresAt.getTime() - Date.now()) / 1000)),
+    });
+    let dest = "/portal";
+    if (g.caseId) {
+      const c = await findCase(
+        db,
+        {
+          orgId: g.organizationId,
+          actor: { type: "customer", id: `grant:${g.id}`, customerId: g.customerId },
+        },
+        g.caseId,
+      );
+      dest = `/portal/cases/${c.reference}`;
+    }
+    return { ok: true, redirectTo: dest };
+  } catch (e) {
+    if (e instanceof AppError && e.code === "RATE_LIMITED") return { ok: false, error: e.message };
+    return {
+      ok: false,
+      error: "This link has expired or is no longer valid. Ask for a new one, or sign in.",
+    };
+  }
+}
+
 export async function signOutAction() {
   await getAuth()
     .api.signOut({ headers: await headers() })
@@ -176,13 +224,20 @@ export async function signOutAction() {
   revalidatePath("/", "layout");
 }
 export async function requestPasswordResetAction(_p: ActionResult, fd: FormData): R {
-  // Always the same answer — never reveal whether an address has an account.
-  await getAuth()
-    .api.requestPasswordReset({
-      body: { email: str(fd, "email").toLowerCase(), redirectTo: "/reset-password" },
-      headers: await headers(),
-    })
-    .catch(() => undefined);
+  // Always the same answer — never reveal whether an address has an account (not even by rate-limit behaviour).
+  const email = str(fd, "email").toLowerCase();
+  const allowed = await rateLimit(
+    db,
+    `pwreset:${clientIp(await headers())}:${sha256Hex(email).slice(0, 16)}`,
+    5,
+    600,
+  )
+    .then(() => true)
+    .catch(() => false);
+  if (allowed)
+    await getAuth()
+      .api.requestPasswordReset({ body: { email, redirectTo: "/reset-password" }, headers: await headers() })
+      .catch(() => undefined);
   return {
     ok: true,
     message:
@@ -218,6 +273,7 @@ export async function policyQuestionAction(
 ): Promise<ActionResult & { answer?: unknown }> {
   const s = await getStaff();
   if (!s) return { ok: false, error: "Please sign in." };
+  await quota(s.ctx, "policyq", 120, 3600);
   const a = await answerFromPolicy(db, s.org.id, str(fd, "q"));
   return { ok: true, answer: a };
 }
@@ -253,6 +309,7 @@ export async function openCaseAction(_p: ActionResult, fd: FormData): R {
 export async function confirmActionAction(_p: ActionResult, fd: FormData): R {
   return guard(async () => {
     const ctx = await customerCtx();
+    await quota(ctx, "confirm", 60, 3600);
     const consent = str(fd, "consent") === "yes";
     const r = await confirmAction(db, ctx, str(fd, "requestId"), consent);
     // Derive the case from the request itself — never from a client-supplied reference.
@@ -286,6 +343,7 @@ export async function confirmActionAction(_p: ActionResult, fd: FormData): R {
 export async function provideInfoAction(_p: ActionResult, fd: FormData): R {
   return guard(async () => {
     const ctx = await anyCtx();
+    await quota(ctx, "info", 40, 3600);
     const answers = Object.fromEntries(
       [...fd.entries()]
         .filter(([k]) => !k.startsWith("$") && k !== "caseRef")
@@ -298,6 +356,7 @@ export async function provideInfoAction(_p: ActionResult, fd: FormData): R {
 export async function uploadEvidenceAction(_p: ActionResult, fd: FormData): R {
   return guard(async () => {
     const ctx = await anyCtx();
+    await quota(ctx, "upload", 20, 3600);
     const f = fd.get("file");
     if (!(f instanceof File) || f.size === 0) throw new AppError("VALIDATION", "Choose a file to upload.");
     if (f.size > 2 * 1024 * 1024) throw new AppError("VALIDATION", "That file is larger than 2 MB.");
@@ -315,6 +374,7 @@ export async function uploadEvidenceAction(_p: ActionResult, fd: FormData): R {
 export async function escalateAction(_p: ActionResult, fd: FormData): R {
   return guard(async () => {
     const ctx = await anyCtx();
+    await quota(ctx, "escalate", 8, 3600);
     const channel =
       str(fd, "channel") === "email_request"
         ? "email_request"
@@ -332,6 +392,7 @@ export async function escalateAction(_p: ActionResult, fd: FormData): R {
 export async function reopenAction(_p: ActionResult, fd: FormData): R {
   return guard(async () => {
     const ctx = await anyCtx();
+    await quota(ctx, "reopen", 10, 3600);
     await reopenCase(db, ctx, str(fd, "caseRef"), str(fd, "reason"));
     return { message: "Case reopened. Nothing was lost." };
   });
@@ -346,6 +407,7 @@ export async function cancelCaseAction(_p: ActionResult, fd: FormData): R {
 export async function feedbackAction(_p: ActionResult, fd: FormData): R {
   return guard(async () => {
     const ctx = await customerCtx();
+    await quota(ctx, "feedback", 10, 3600);
     const rating = Number(str(fd, "rating"));
     if (!(rating >= 1 && rating <= 5)) throw new AppError("VALIDATION", "Choose a rating from 1 to 5.");
     await db.transaction(async (tx) => {
@@ -435,6 +497,7 @@ export async function priorityAction(_p: ActionResult, fd: FormData): R {
 export async function noteAction(_p: ActionResult, fd: FormData): R {
   return guard(async () => {
     const ctx = await staffCtx();
+    await quota(ctx, "note", 120, 3600);
     const msg = str(fd, "message");
     if (!msg) throw new AppError("VALIDATION", "Write a note first.");
     await addNote(
@@ -556,7 +619,7 @@ export async function issuePortalLinkAction(
     });
     await audit(db, ctx, { action: "grant.issue", targetType: "case", targetId: c.id });
     return {
-      data: `/portal/access/${token}`,
+      data: `/access/${token}`,
       message:
         "Read-only case link created (valid 24 hours). The customer must sign in to confirm or change anything.",
     };
@@ -656,7 +719,9 @@ export async function policyDraftAction(_p: ActionResult, fd: FormData): R {
     } catch {
       throw new AppError("VALIDATION", 'Rules must be valid JSON, e.g. {"billing.review_window_days": 60}');
     }
-    const r = await createPolicyVersion(db, await staffCtx(), {
+    const pctx = await staffCtx();
+    await quota(pctx, "policydraft", 30, 3600);
+    const r = await createPolicyVersion(db, pctx, {
       documentKey: str(fd, "documentKey"),
       title: str(fd, "title") || undefined,
       body: str(fd, "body"),
@@ -720,5 +785,43 @@ export async function cancelSubscriptionAction(_p: ActionResult, _fd: FormData):
   return guard(async () => {
     await cancelSubscription(db, await staffCtx());
     return { message: "Subscription cancelled (test mode)." };
+  });
+}
+
+/* ===================================================== privacy & operations */
+export async function requestErasureAction(_p: ActionResult, fd: FormData): R {
+  return guard(async () => {
+    const ctx = await customerCtx();
+    await quota(ctx, "erasure", 3, 86_400);
+    await requestErasure(db, ctx, str(fd, "reason") || undefined);
+    return {
+      message:
+        "Your erasure request was sent. A team member will review it; open cases must be closed first.",
+    };
+  });
+}
+export async function processErasureAction(_p: ActionResult, fd: FormData): R {
+  return guard(async () => {
+    const r = await processErasure(
+      db,
+      await staffCtx(),
+      str(fd, "id"),
+      str(fd, "decision") === "approve" ? "approve" : "reject",
+      str(fd, "note") || undefined,
+    );
+    return {
+      message: r.status === "COMPLETED" ? "The customer's personal data was erased." : "Request declined.",
+    };
+  });
+}
+export async function retryJobAction(_p: ActionResult, fd: FormData): R {
+  return guard(async () => {
+    const ctx = await staffCtx();
+    if (ctx.actor.type !== "operator") throw forbidden();
+    requirePermission(ctx.actor.role, "org.manage");
+    const ok = await requeueDead(db, str(fd, "id"), ctx.orgId);
+    if (!ok) throw new AppError("NOT_FOUND", "That job is not in a failed state.");
+    await audit(db, ctx, { action: "job.requeue", targetType: "job", targetId: str(fd, "id") });
+    return { message: "Job queued again. The worker will pick it up shortly." };
   });
 }

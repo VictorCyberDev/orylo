@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { getStaff } from "@/auth/session";
-import { exportOrganizationData } from "@/domain/admin";
+import { exportOrganizationStream } from "@/domain/admin";
 import { AppError } from "@/domain/errors";
+import { rateLimit } from "@/domain/rate-limit";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const s = await getStaff();
@@ -12,12 +15,14 @@ export async function GET() {
       { status: 401 },
     );
   try {
-    const data = await exportOrganizationData(db, s.ctx);
-    return new NextResponse(JSON.stringify(data, null, 2), {
+    await rateLimit(db, `org-export:${s.user.id}`, 5, 3600);
+    const stream = await exportOrganizationStream(db, s.ctx);
+    return new NextResponse(stream, {
       headers: {
-        "Content-Type": "application/json",
-        "Content-Disposition": `attachment; filename="${s.org.slug}-export.json"`,
+        "Content-Type": "application/x-ndjson",
+        "Content-Disposition": `attachment; filename="${s.org.slug}-export.ndjson"`,
         "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch (e) {

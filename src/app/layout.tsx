@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { headers } from "next/headers";
 import "./globals.css";
 import { brand } from "@/config/brand";
 import { ToastProvider } from "@/components/client";
@@ -30,11 +31,15 @@ export const viewport: Viewport = {
 
 const themeInit = `try{var t=localStorage.getItem('orylo-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}`;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// Dynamic rendering is required so every response can carry a fresh CSP nonce (see src/proxy.ts).
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body>
         <a href="#main" className="skip-link">

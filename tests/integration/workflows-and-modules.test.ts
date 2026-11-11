@@ -1,3 +1,4 @@
+import { PNG } from "../fixtures";
 import { beforeEach, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { db, freshWorld, op, cust, caseState } from "../helpers";
@@ -42,7 +43,6 @@ let w: World;
 beforeEach(async () => {
   w = await freshWorld();
 });
-const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(64)]);
 
 describe("Workflow 2 — Missed Service Appointment Recovery (internal steps; no scheduling system)", () => {
   it("collects details → proposes → hands to scheduling queue → human-confirmed slot → verified resolved", async () => {

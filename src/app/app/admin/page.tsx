@@ -20,7 +20,7 @@ export default async function OrgPage() {
             href="/api/admin/export"
             download
           >
-            Export data (JSON)
+            Export data (NDJSON stream)
           </a>
         }
       />

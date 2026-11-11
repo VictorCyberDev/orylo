@@ -72,6 +72,20 @@ export const NAV: Item[] = [
   },
   { href: "/app/admin/api-keys", label: "API keys", perm: "apikeys.manage", group: "Admin" },
   {
+    href: "/app/admin/jobs",
+    label: "Background jobs",
+    perm: "audit.read",
+    group: "Admin",
+    keywords: "worker retries timeouts queue scheduler dead",
+  },
+  {
+    href: "/app/admin/privacy",
+    label: "Privacy requests",
+    perm: "privacy.manage",
+    group: "Admin",
+    keywords: "erasure delete gdpr data subject",
+  },
+  {
     href: "/app/admin/ledger",
     label: "Outcome ledger",
     perm: "audit.read",

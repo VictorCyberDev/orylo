@@ -23,6 +23,7 @@ export const PERMISSIONS = [
   "billing.read",
   "billing.manage",
   "export.run",
+  "privacy.manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 

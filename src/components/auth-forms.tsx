@@ -2,6 +2,7 @@
 import { ActionForm, SubmitButton } from "./client";
 import {
   acceptInviteSignedInAction,
+  openAccessLinkAction,
   requestPasswordResetAction,
   resetPasswordAction,
   signInAction,
@@ -99,6 +100,15 @@ export function AcceptInviteForm({ token }: { token: string }) {
     <ActionForm action={acceptInviteSignedInAction} className="space-y-4" successToast={false}>
       <input type="hidden" name="token" value={token} />
       <SubmitButton className="w-full">Accept invitation</SubmitButton>
+    </ActionForm>
+  );
+}
+
+export function AccessLinkForm({ token }: { token: string }) {
+  return (
+    <ActionForm action={openAccessLinkAction} className="space-y-4" successToast={false}>
+      <input type="hidden" name="token" value={token} />
+      <SubmitButton className="w-full">View my case (read-only)</SubmitButton>
     </ActionForm>
   );
 }

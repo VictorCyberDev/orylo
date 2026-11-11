@@ -5,6 +5,8 @@ import { AppError, notFound } from "./errors";
 import { assertCanAct, type Ctx } from "./context";
 import { appendEvent, assertCaseAccess, lockCase } from "./cases";
 import { sha256Hex } from "./crypto";
+import { decryptEvidence, encryptEvidence } from "./evidence-crypto";
+import { validateJpeg, validatePdf, validatePng, validateText } from "./evidence-validate";
 import { audit } from "./audit";
 
 export const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
@@ -42,6 +44,11 @@ export function validateUpload(filename: string, declaredType: string, bytes: Bu
     throw new AppError("VALIDATION", "The file name does not match its type.");
   if (rule.magic && !rule.magic(bytes))
     throw new AppError("VALIDATION", "The file contents do not match its type.");
+  // Structural checks: complete, no trailing data, no active content (see evidence-validate.ts).
+  if (declaredType === "image/png") validatePng(bytes);
+  else if (declaredType === "image/jpeg") validateJpeg(bytes);
+  else if (declaredType === "application/pdf") validatePdf(bytes);
+  else validateText(bytes);
   return { filename: safe, contentType: declaredType };
 }
 
@@ -81,7 +88,7 @@ export async function addEvidence(
         sizeBytes: file.bytes.length,
         sha256: sha256Hex(file.bytes),
         note: note?.slice(0, 500),
-        content: file.bytes,
+        content: encryptEvidence(file.bytes),
       })
       .returning({
         id: caseEvidence.id,
@@ -132,5 +139,5 @@ export async function getEvidenceFile(db: DbOrTx, ctx: Ctx, evidenceId: string) 
     .where(and(eq(resolutionCases.id, e.caseId), eq(resolutionCases.organizationId, ctx.orgId)));
   if (!c) throw notFound("Evidence");
   assertCaseAccess(ctx, { ...c, id: e.caseId });
-  return e;
+  return { ...e, content: decryptEvidence(e.content) };
 }

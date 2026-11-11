@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   apiKeys,
@@ -469,10 +469,26 @@ export async function exportOrganizationData(db: DbOrTx, ctx: Ctx) {
   const a = staff(ctx);
   requirePermission(a.role, "export.run");
   const o = ctx.orgId;
-  const cases = await db.select().from(resolutionCases).where(eq(resolutionCases.organizationId, o));
-  const objectives = await db.select().from(caseObjectives).where(eq(caseObjectives.organizationId, o));
-  const events = await db.select().from(caseEvents).where(eq(caseEvents.organizationId, o));
-  const ledger = await db.select().from(outcomeLedger).where(eq(outcomeLedger.organizationId, o));
+  const cases = await db
+    .select()
+    .from(resolutionCases)
+    .where(eq(resolutionCases.organizationId, o))
+    .limit(EXPORT_ROW_CAP);
+  const objectives = await db
+    .select()
+    .from(caseObjectives)
+    .where(eq(caseObjectives.organizationId, o))
+    .limit(EXPORT_ROW_CAP);
+  const events = await db
+    .select()
+    .from(caseEvents)
+    .where(eq(caseEvents.organizationId, o))
+    .limit(EXPORT_ROW_CAP);
+  const ledger = await db
+    .select()
+    .from(outcomeLedger)
+    .where(eq(outcomeLedger.organizationId, o))
+    .limit(EXPORT_ROW_CAP);
   const custs = await db
     .select({
       id: customers.id,
@@ -499,4 +515,113 @@ export async function exportOrganizationData(db: DbOrTx, ctx: Ctx) {
     events,
     ledger,
   };
+}
+
+/** In-memory export is bounded; the download route uses the streaming variant below, which is not. */
+const EXPORT_ROW_CAP = 20_000;
+
+/**
+ * Streaming NDJSON export: keyset-paginated (1000 rows per query), constant memory, one JSON object per line:
+ * {"type":"meta",...} then {"type":"customer|case|objective|event|ledger|action","row":{...}}. Excludes secrets,
+ * password hashes and file bodies. Permission is checked BEFORE the stream starts.
+ */
+export async function exportOrganizationStream(db: DbOrTx, ctx: Ctx): Promise<ReadableStream<Uint8Array>> {
+  const a = staff(ctx);
+  requirePermission(a.role, "export.run");
+  const o = ctx.orgId;
+  await audit(db, ctx, { action: "export.stream", targetType: "organization", targetId: o });
+  type Fetcher = (after?: string) => Promise<{ id: string }[]>;
+  const page = <T extends { id: string }>(q: (after?: string) => Promise<T[]>): Fetcher => q;
+  const fetchers: [string, Fetcher][] = [
+    [
+      "customer",
+      page((after) =>
+        db
+          .select({
+            id: customers.id,
+            externalRef: customers.externalRef,
+            name: customers.name,
+            email: customers.email,
+            synthetic: customers.synthetic,
+          })
+          .from(customers)
+          .where(and(eq(customers.organizationId, o), after ? gt(customers.id, after) : undefined))
+          .orderBy(asc(customers.id))
+          .limit(1000),
+      ),
+    ],
+    [
+      "case",
+      page((after) =>
+        db
+          .select()
+          .from(resolutionCases)
+          .where(
+            and(eq(resolutionCases.organizationId, o), after ? gt(resolutionCases.id, after) : undefined),
+          )
+          .orderBy(asc(resolutionCases.id))
+          .limit(1000),
+      ),
+    ],
+    [
+      "objective",
+      page((after) =>
+        db
+          .select()
+          .from(caseObjectives)
+          .where(and(eq(caseObjectives.organizationId, o), after ? gt(caseObjectives.id, after) : undefined))
+          .orderBy(asc(caseObjectives.id))
+          .limit(1000),
+      ),
+    ],
+    [
+      "event",
+      page((after) =>
+        db
+          .select()
+          .from(caseEvents)
+          .where(and(eq(caseEvents.organizationId, o), after ? gt(caseEvents.id, after) : undefined))
+          .orderBy(asc(caseEvents.id))
+          .limit(1000),
+      ),
+    ],
+    [
+      "ledger",
+      page((after) =>
+        db
+          .select()
+          .from(outcomeLedger)
+          .where(and(eq(outcomeLedger.organizationId, o), after ? gt(outcomeLedger.id, after) : undefined))
+          .orderBy(asc(outcomeLedger.id))
+          .limit(1000),
+      ),
+    ],
+  ];
+  async function* lines() {
+    yield {
+      type: "meta",
+      exportedAt: new Date().toISOString(),
+      organizationId: o,
+      format: "ndjson",
+      note: "secrets, password hashes and file bodies are never exported",
+    };
+    for (const [type, fetch] of fetchers) {
+      let after: string | undefined;
+      for (;;) {
+        const batch = await fetch(after);
+        for (const row of batch) yield { type, row };
+        if (batch.length < 1000) break;
+        after = batch[batch.length - 1].id;
+      }
+    }
+  }
+  const it = lines();
+  const enc = new TextEncoder();
+  return new ReadableStream<Uint8Array>({
+    async pull(c) {
+      const { value, done } = await it.next();
+      if (done) c.close();
+      else c.enqueue(enc.encode(JSON.stringify(value) + "\n"));
+    },
+  });
 }

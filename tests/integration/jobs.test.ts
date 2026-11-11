@@ -1,3 +1,4 @@
+import { PNG } from "../fixtures";
 import { beforeEach, describe, expect, it } from "vitest";
 import { and, eq, sql } from "drizzle-orm";
 import { db, freshWorld, op, cust, acct, openRecoveryCase, caseState, setMode } from "../helpers";
@@ -40,7 +41,6 @@ const dueNow = (where = sql`true`) =>
     .update(scheduledJobs)
     .set({ runAt: new Date(Date.now() - 1000) })
     .where(and(eq(scheduledJobs.status, "PENDING"), where));
-const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(64)]);
 
 describe("queue mechanics", () => {
   it("enqueue is idempotent by dedupe key; future jobs are not claimed", async () => {

@@ -2,6 +2,7 @@
  * Regression tests for the findings of the independent security review (see docs/security/threat-model.md).
  * Each test reproduces the attack described and asserts it no longer works.
  */
+import { PNG } from "../fixtures";
 import { beforeEach, describe, expect, it } from "vitest";
 import { and, eq, sql } from "drizzle-orm";
 import { db, freshWorld, op, cust, openRecoveryCase, caseState } from "../helpers";
@@ -38,7 +39,6 @@ let w: World;
 beforeEach(async () => {
   w = await freshWorld();
 });
-const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(64)]);
 const asReadOnly = (c: Ctx, caseScope?: string): Ctx => ({
   ...c,
   actor: { ...(c.actor as Extract<Ctx["actor"], { type: "customer" }>), readOnly: true, caseScope },
@@ -259,10 +259,11 @@ describe("F6/F8/F9/F18: logging, secrets, IP trust, receipts", () => {
       env.RECEIPT_SIGNING_KEY = prev[1];
     }
   });
-  it("client IP uses the proxy-appended (right-most) entry, not the spoofable left-most one", () => {
-    expect(clientIp(new Headers({ "x-forwarded-for": "6.6.6.6, 1.2.3.4" }))).toBe("1.2.3.4");
-    expect(clientIp(new Headers({ "x-real-ip": "9.9.9.9", "x-forwarded-for": "6.6.6.6" }))).toBe("9.9.9.9");
-    expect(clientIp(new Headers())).toBe("unknown");
+  it("client IP trust is explicit: forwarded headers are ignored by default (see config-and-crypto unit test for hops)", () => {
+    expect(clientIp(new Headers({ "x-forwarded-for": "6.6.6.6, 1.2.3.4", "x-real-ip": "9.9.9.9" }))).toBe(
+      "direct",
+    );
+    expect(clientIp(new Headers({ "x-forwarded-for": "6.6.6.6, 1.2.3.4" }), 1)).toBe("1.2.3.4");
   });
   it("receipt numbers carry 64 bits of the request hash", async () => {
     const { ctx, actions } = await openRecoveryCase(w, "jordan");

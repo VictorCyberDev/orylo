@@ -30,6 +30,9 @@ jobs:
       BETTER_AUTH_URL: http://localhost:3000
       BETTER_AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
       RECEIPT_SIGNING_KEY: ci-only-receipt-signing-key-0123456789abcdef
+      # 32 random bytes, base64. CI-only value: not a secret, not used anywhere else.
+      EVIDENCE_ENCRYPTION_KEY: Y2ktb25seS1ldmlkZW5jZS1rZXktMzItYnl0ZXMtISE=
+      CRON_SECRET: ci-only-cron-secret-0123456789abcdef
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
