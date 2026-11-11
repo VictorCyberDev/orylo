@@ -51,15 +51,16 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
-      - name: Install Playwright Chromium (bounded and retried)
-        # Runs 17 and 18 failed only at this step after ~10 minutes of package-mirror stalls; each attempt is now bounded.
+      - name: Install Playwright Chromium (bounded, force-killed, retried)
+        # Runs 17, 18 and 24 hung here for 10+ minutes on the runner's package mirrors. `timeout -k` force-kills a stuck apt-get
+        # (plain `timeout` only sends SIGTERM and then waits forever). The last attempt skips system packages (the runner image has most).
         run: |
-          for attempt in 1 2 3; do
-            if timeout 240 npx playwright install --with-deps chromium; then exit 0; fi
+          for attempt in 1 2; do
+            if timeout -k 10 240 npx playwright install --with-deps chromium; then exit 0; fi
             echo "attempt $attempt failed or timed out; retrying"
             sleep 5
           done
-          exit 1
+          timeout -k 10 240 npx playwright install chromium
       - name: Browser tests (journeys, axe a11y, responsive, API contract)
         run: npm run test:e2e
       - uses: actions/upload-artifact@v4

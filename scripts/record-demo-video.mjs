@@ -1,5 +1,5 @@
 /**
- * Records the one-minute demonstration from REAL, unedited screen captures (Playwright video of real browser sessions) of
+ * Records the one-minute demonstration from REAL, unedited screen captures (Chrome screencast frames of real browser sessions) of
  *   (1) eGain's own public agent page answering a customer's complaint from the Northfield policy documents, and
  *   (2) Orylo's deployed site (a SEPARATE system) executing the governed correction, verifying it, and keeping the billing review pending.
  * Title cards are plain text labels; nothing is composited into the footage. Waiting time is not cut out of a clip — clips are only
@@ -9,7 +9,7 @@
  */
 import { chromium } from "playwright";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readdirSync, renameSync, writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 
 const BASE = process.env.LIVE_PUBLIC_URL;
 const CODE = process.env.REVIEWER_CODE;
@@ -42,17 +42,64 @@ await sp.waitForURL(/\/portal$/, { timeout: 30000 });
 const state = await setup.storageState();
 await setup.close();
 
+/**
+ * Real screen capture: Chrome's own screencast frames (what the page actually painted, with their real timestamps), written
+ * as-is and encoded by ffmpeg. (Playwright's recordVideo wrote no file in this environment, so it is not used.)
+ */
 async function record(name, fn, opts = {}) {
-  const ctx = await browser.newContext({
-    viewport: { width: W, height: H },
-    recordVideo: { dir: `${tmp}/${name}`, size: { width: W, height: H } },
-    ...opts,
-  });
+  const ctx = await browser.newContext({ viewport: { width: W, height: H }, ...opts });
   const page = await ctx.newPage();
+  const cdp = await ctx.newCDPSession(page);
+  const dir = `${tmp}/${name}`;
+  mkdirSync(dir, { recursive: true });
+  const frames = [];
+  cdp.on("Page.screencastFrame", (f) => {
+    const file = `${dir}/f${String(frames.length).padStart(5, "0")}.jpg`;
+    writeFileSync(file, Buffer.from(f.data, "base64"));
+    frames.push({ file, t: f.metadata.timestamp });
+    cdp.send("Page.screencastFrameAck", { sessionId: f.sessionId }).catch(() => {});
+  });
+  await cdp.send("Page.startScreencast", {
+    format: "jpeg",
+    quality: 85,
+    maxWidth: W,
+    maxHeight: H,
+    everyNthFrame: 1,
+  });
   await fn(page);
-  await ctx.close(); // flushes the video
-  const f = readdirSync(`${tmp}/${name}`).find((x) => x.endsWith(".webm"));
-  renameSync(`${tmp}/${name}/${f}`, `${tmp}/${name}.webm`);
+  await new Promise((r) => setTimeout(r, 400));
+  await cdp.send("Page.stopScreencast");
+  await ctx.close();
+  if (frames.length < 2) throw new Error(`clip ${name}: no frames captured`);
+  const lines = [];
+  frames.forEach((f, i) => {
+    const d = i < frames.length - 1 ? Math.max(0.01, frames[i + 1].t - f.t) : 0.5;
+    lines.push(`file '${f.file.replace(`${tmp}/`, "")}'`, `duration ${d.toFixed(3)}`);
+  });
+  lines.push(`file '${frames.at(-1).file.replace(`${tmp}/`, "")}'`);
+  writeFileSync(`${tmp}/${name}.txt`, lines.join("\n"));
+  execFileSync(
+    "ffmpeg",
+    [
+      "-y",
+      "-f",
+      "concat",
+      "-safe",
+      "0",
+      "-i",
+      `${tmp}/${name}.txt`,
+      "-vf",
+      `scale=${W}:${H},fps=25`,
+      "-c:v",
+      "libvpx",
+      "-b:v",
+      "2M",
+      "-an",
+      `${tmp}/${name}.webm`,
+    ],
+    { stdio: "ignore" },
+  );
+  console.log(`clip ${name}: ${frames.length} frames, ${(frames.at(-1).t - frames[0].t).toFixed(1)} s`);
 }
 
 // Clip A — eGain's real agent answers from the policy (real wait included)
@@ -63,9 +110,12 @@ await record("a_egain", async (p) => {
   await p.waitForTimeout(1500);
   await p
     .locator("#eg-chat-message-input-textarea")
-    .pressSequentially("I cancelled my subscription but I was charged again. What can be done?", {
-      delay: 28,
-    });
+    .pressSequentially(
+      "I asked to cancel my subscription last week but I was charged again. What is your policy?",
+      {
+        delay: 28,
+      },
+    );
   await p.keyboard.press("Enter");
   await p.getByText("Sources").first().waitFor({ timeout: 60000 });
   await p.waitForTimeout(3500);

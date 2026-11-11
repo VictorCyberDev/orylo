@@ -13,6 +13,26 @@ customer/operator/admin interfaces, data export/erasure, an eGain-facing HTTP ac
 customer**. The live eGain agent (Gate H) is **BLOCKED**: no eGain tenant access exists here, and obtaining it needs the owner's own account (see `egain/published-agent-acceptance-log.md` §0).
 **Readiness verdict: a verified, honest prototype and eGain-ready backend; NOT production-ready and NOT hackathon-submittable as an eGain entry until the owner completes the eGain side.**
 
+## 0-final. Update 2026-11-11 (final execution) — supersedes the rows of §0 below where they differ
+
+**Corrections of my earlier statements:** (1) the widget was reported "VERIFIED COMPLETE … works on real hostnames". That was **wrong**: those tests used request interception, which bypasses eGain's CORS check. On the real public origin the widget does **not** load until the owner allows the site in the agent's settings (`docs/evidence/egain-widget-csp.md` finding 6). (2) "Public deployment BLOCKED" is no longer true. (3) "0 of 11 policy cases pass" is no longer true (below).
+
+| Item | Class | Basis |
+|---|---|---|
+| Neon quota | **COMPLETE** | Owner freed a slot; `prodpermit-m3d` and all other products' databases untouched; no delete, no paid resource. Dedicated project `orylo-demo` (`holy-queen-21980635`), $0 |
+| Public deployment | **COMPLETE** | https://orylo-demo.vercel.app, `/demo`, health ok, dedicated DB, seeded synthetic data (`docs/operations/vercel-deployment.md`) |
+| Public acceptance on the real URL | **PARTIAL (6 of 8)** | headers/exposure, reviewer gate, customer journey (verified cancellation, pending review, no refund, receipt + tamper test, 404 cross-customer), admin pages pass; 2 real-widget tests fail (eGain origin allow-list — owner action) |
+| eGain knowledge (live, owner-updated agent) | **PARTIAL (11 of 13)** | K08 (refund-review wording) and K10 (escalation) fail — `docs/evidence/egain-live-tests.md`. A pass proves the reply contained the governing facts, not that the agent "learned" (it is retrieval over uploaded files) |
+| Workflow behaviour (W1–W5) | **PARTIAL (3 of 5)** | W3 **FAILED**: the agent states actions as done ("a billing review has been opened", "case has been forwarded") that no system performed; W4 **FAILED**: escalation is a generic "contact customer care", not callback + email |
+| Native eGain capabilities (pre-chat, guided process, consent, callback + email escalation, handoff context, Actions) | **NOT OBSERVABLE / NOT CONFIGURED** | no pre-chat form on the anonymous chat; no workflow or escalation options observed; configuring them needs the owner's eGain login, which I do not have. Nothing was simulated as "native" |
+| eGain-originated call to Orylo's Action Gateway | **BLOCKED** | none happened; needs the owner to configure an HTTP action in eGain (capability unverified). The Gateway itself works and is publicly reachable; contract and key flow in `egain/action-contracts/` |
+| One-minute video | **PARTIAL** | real 49.1 s recording in `docs/evidence/video/` (eGain agent and Orylo as separate systems; says the agent does not call Orylo). Not uploaded to a video host (owner account) |
+| Devpost | **NOT DONE** | page read (public); no login; update text prepared in `docs/hackathon/devpost-update.md` |
+| Organizer form | **NOT SUBMITTED** | no access; and its required confirmation (published + tested pre-chat/escalation/process workflows) is **not true** today |
+| Deadline | earliest cutoff **Nov 13 2026 05:30 WAT** (Devpost, as reported to me) vs organizer rules Nov 15 11:59 PM PST (= Nov 16 08:59 WAT) | use the earlier |
+
+**GitHub Actions in this phase (every run, honestly):** 17 (`55c60d5`) **failure** — "Install Playwright Chromium" stalled ~10 min; 18 (`0c53c74`) **failure** — same step; 19 and 20 **cancelled** (superseded by the next push; the workflow cancels in-progress runs); 21 (`f8bc9db`) **failure** — `npm run lint`: an unused variable in `scripts/record-demo-video.mjs`, my error, fixed in `a1a4310`; 22, 23 **cancelled** (superseded); 24 (`9e45f88`) — see the final message for its conclusion; I do not treat a pending or cancelled run as green. Last **green** run before this phase: 43031396125 (`2476860`). The recurring failure is runner/package-mirror flakiness at the browser-install step, not a test; the step is now bounded and retried.
+
 ## 0. Update 2026-11-11 (later) — eGain live integration, knowledge audit, deployment attempt
 
 | Item | Class | Basis |

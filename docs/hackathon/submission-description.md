@@ -2,7 +2,13 @@
 
 The official rules ask for "a description of up to 150 words explaining the problem, intended user, business value, and distinctive features" (https://www.egain.com/ai-agent-hackathon/).
 
-> **2026-11-11 gate:** a live test of the owner's published agent shows it does not yet answer the Northfield policies (0 of 11) and no workflow or action is observable. Do **not** record or submit anything that depends on them until `npm run test:live` passes the knowledge cases. See `organizer-readiness-checklist.md`.
+> **2026-11-11 update:** the owner's agent now answers the Northfield policies (11 of 13 live cases pass) and Orylo is deployed publicly. The eGain agent still does **not** call Orylo, and no pre-chat/process/escalation workflow is observable. **Version C below is the only text that matches what is verified today.** Versions A and B describe things that are not true yet; do not use them unless the owner builds them in eGain and `egain/published-agent-acceptance-log.md` records the passing test.
+
+## Version C: what is true today (121 words)
+
+> Northfield Digital is a fictional subscription provider where customers who cancel are sometimes charged again and must repeat their story. This eGain AI Agent answers from authorized policy documents and cites its sources. Orylo, a separate backend deployed publicly, handles the correction: with the customer's explicit consent it applies the earlier cancellation, reads the account back to verify it, and issues a signed receipt anyone can check. The billing review is opened but stays pending; no refund is promised, and charges over $50.00 need a team member's approval. The customer can request a callback or email follow-up that carries the case context. Today the eGain agent does not call Orylo; the two are shown side by side. All data is synthetic.
+
+Notes: it claims *knowledge-based answers* and a *published experience* (the agent's public page), not Actions, pre-chat, process or escalation workflows. The form's capability checkboxes should therefore tick only what the owner has observed in eGain's Test AI Agent. The form's "Publication and testing confirmation" requires **published and tested pre-chat, escalation (≥2 options) and process workflows connected to an intent: that is not true today and must not be ticked** unless the owner builds and tests them first.
 
 **Status: DRAFT. Do not submit until the owner has checked every sentence against `egain/published-agent-acceptance-log.md`.** Sentences that describe the eGain agent calling Orylo are true only if that was built, published and tested in eGain. Nothing was built, published or tested in eGain from this repository (`BLOCKED — no eGain tenant access in this environment`).
 

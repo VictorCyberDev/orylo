@@ -11,3 +11,6 @@ playwright-report
 coverage
 .DS_Store
 .vitest
+
+# raw intermediate clips for the demo video (large); the final mp4 is kept
+docs/evidence/video/_clips/
