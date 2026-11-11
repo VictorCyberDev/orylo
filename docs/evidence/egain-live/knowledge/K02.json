@@ -1,18 +1,16 @@
 {
-  "ranAt": "2026-11-11T13:07:47.970Z",
+  "ranAt": "2026-11-11T14:24:53.746Z",
   "id": "K02",
   "area": "billing review policy",
   "source": "billing-policy.md",
   "question": "How long do I have to ask for a charge to be reviewed, and does a review give me my money back?",
-  "reply": "Kindly note that I can only answer queries related to:  Action Gateway and Workflow Orchestration, Evidence and Documentation Management, Automated Testing and Quality Assurance, Authentication and Authorization, Application Security and Compliance, CI/CD Pipeline Configuration and Management, eGain Integration and Hackathon Strategy, Data Privacy and Protection, Infrastructure and Containerization, Frontend and UI/UX Development, Software Development Workflow and Lifecycle, Database Management and Migration, Application Architecture and Design Principles, Dependency and Environment Configuration, Operational Error Handling and Monitoring",
+  "reply": "Based on the information provided, you have up to 60 days from the date a charge is posted to ask for it to be reviewed. Please note that simply opening a review does not by itself refund, reverse, or credit any money.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "Kindly note that I can only answer queries related to:  Action Gateway and Workflow Orchestration, Evidence and Documentation Management, Automated Testing and Quality Assurance, Authentication and Authorization, Application Security and Compliance, CI/CD Pipeline Configuration and Management, eGain Integration and Hackathon Strategy, Data Privacy and Protection, Infrastructure and Containerization, Frontend and UI/UX Development, Software Development Workflow and Lifecycle, Database Management and Migration, Application Architecture and Design Principles, Dependency and Environment Configuration, Operational Error Handling and Monitoring"
+    "Based on the information provided, you have up to 60 days from the date a charge is posted to ask for it to be reviewed. Please note that simply opening a review does not by itself refund, reverse, or credit any money."
   ],
-  "responseMs": 8387,
-  "verdict": "FAIL",
-  "failures": [
-    "answered with the out-of-scope refusal instead of the policy"
-  ],
-  "refusal": true
+  "responseMs": 11893,
+  "verdict": "PASS",
+  "failures": [],
+  "refusal": false
 }

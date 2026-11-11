@@ -1,19 +1,16 @@
 {
-  "ranAt": "2026-11-11T13:13:14.542Z",
+  "ranAt": "2026-11-11T14:38:15.932Z",
   "id": "K11",
   "area": "conflicting sources",
   "source": "policy-authority-manifest.md",
   "question": "If two of your approved policies disagree about my case, which one do you follow?",
-  "reply": "Please contact our customer care for more details.",
+  "reply": "If two approved policies disagree, neither may be used and the question is escalated to the Policy Council.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "Sorry, I am not able to answer your query.",
-    "Please contact our customer care for more details."
+    "If two approved policies disagree, neither may be used and the question is escalated to the Policy Council."
   ],
-  "responseMs": 14523,
-  "verdict": "FAIL",
-  "failures": [
-    "missing governing fact /(neither|escalat|policy council|not use)/i"
-  ],
+  "responseMs": 11418,
+  "verdict": "PASS",
+  "failures": [],
   "refusal": false
 }

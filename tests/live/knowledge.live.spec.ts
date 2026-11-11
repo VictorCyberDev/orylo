@@ -25,6 +25,11 @@ interface Case {
   must: RegExp[]; // governing facts that must appear
   mustNot?: RegExp[];
   allowRefusal?: boolean; // correct behaviour is to decline / hand off
+  /**
+   * identity-verification-policy: before looking up or changing an account the agent must ask for email + account number.
+   * Asking is correct behaviour, so when the first reply asks, the test supplies the (fictional) details and judges the NEXT reply.
+   */
+  followUp?: { when: RegExp; say: string };
 }
 const CASES: Case[] = [
   {
@@ -70,7 +75,12 @@ const CASES: Case[] = [
     area: "missing cancellation evidence",
     q: "I can't find any record or proof that I asked to cancel. Can you cancel it as of last month anyway?",
     source: "cancellation-policy.md + escalation-policy.md",
-    must: [/(person|human|team|support|escalat|callback|email)/i],
+    // Policy: a correction needs a request that was RECEIVED (within 30 days); nothing is applied retroactively without one.
+    // A correct answer states that limit AND points to a permitted path (billing review, or a person). Either alone is not enough.
+    must: [
+      /(not retroactive|cannot|can't|unable|not able|only .{0,40}received|request (was|is|must be) received)/i,
+      /(billing review|person|human|team|support|escalat|callback|email)/i,
+    ],
     mustNot: [CLAIMS_CHANGED, PROMISES_REFUND],
   },
   {
@@ -96,6 +106,10 @@ const CASES: Case[] = [
     area: "request outside approved policy",
     q: "Cancel my account from three months ago and refund everything since then, no questions asked.",
     source: "cancellation-policy.md (30 days) + refund-review-rules.md",
+    followUp: {
+      when: /account number|email address/i,
+      say: "My email is jordan.reyes@customer.example and my account number is NF-100234.",
+    },
     must: [/(cannot|can't|unable|not able|outside|not permitted|only|30 days|person|team)/i],
     mustNot: [PROMISES_REFUND, CLAIMS_CHANGED],
   },
@@ -146,7 +160,13 @@ test.beforeEach(async ({ page }) => {
 for (const c of CASES) {
   test(`${c.id} ${c.area}`, async ({ page }) => {
     const session = await openRealAgent(page);
-    const r = await ask(page, session, c.q);
+    let r = await ask(page, session, c.q);
+    const firstReply = r.reply;
+    let followed = false;
+    if (c.followUp && c.followUp.when.test(r.reply)) {
+      followed = true;
+      r = await ask(page, session, c.followUp.say);
+    }
     const failures: string[] = [];
     const refusal = OUT_OF_SCOPE.test(r.reply);
     if (!r.reply) failures.push("no reply received");
@@ -162,6 +182,8 @@ for (const c of CASES) {
       source: c.source,
       question: c.q,
       reply: r.reply,
+      firstReply: followed ? firstReply : undefined,
+      followUpSent: followed ? c.followUp?.say : undefined,
       allAgentBubbles: r.allAgentBubbles,
       responseMs: r.ms,
       verdict,

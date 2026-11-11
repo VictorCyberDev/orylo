@@ -4,7 +4,7 @@
   "private": true,
   "description": "Orylo \u2014 governed customer exception-resolution platform (working name; see src/config/brand.ts)",
   "engines": {
-    "node": ">=22"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "next dev",

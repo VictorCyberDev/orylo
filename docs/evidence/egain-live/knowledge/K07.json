@@ -1,18 +1,16 @@
 {
-  "ranAt": "2026-11-11T13:11:00.731Z",
+  "ranAt": "2026-11-11T14:27:58.541Z",
   "id": "K07",
   "area": "duplicate charges",
   "source": "duplicate-charge-investigation.md",
   "question": "I was charged twice for the same month. What counts as a duplicate and what happens next?",
-  "reply": "Kindly note that I can only answer queries related to:  Action Gateway and Workflow Orchestration, Evidence and Documentation Management, Automated Testing and Quality Assurance, Authentication and Authorization, Application Security and Compliance, CI/CD Pipeline Configuration and Management, eGain Integration and Hackathon Strategy, Data Privacy and Protection, Infrastructure and Containerization, Frontend and UI/UX Development, Software Development Workflow and Lifecycle, Database Management and Migration, Application Architecture and Design Principles, Dependency and Environment Configuration, Operational Error Handling and Monitoring",
+  "reply": "A duplicate charge is defined as two charges on the same account for the same plan and billing period posted within 72 hours of each other.\nRegarding what happens next:\nA confirmed duplicate charge is escalated to the billing team for review.Support never promises a refund during the investigation.Billing reviews are normally decided within 5 business days, and refund processing (where approved) happens in the billing system, which may take additional days to appear with your bank.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "Kindly note that I can only answer queries related to:  Action Gateway and Workflow Orchestration, Evidence and Documentation Management, Automated Testing and Quality Assurance, Authentication and Authorization, Application Security and Compliance, CI/CD Pipeline Configuration and Management, eGain Integration and Hackathon Strategy, Data Privacy and Protection, Infrastructure and Containerization, Frontend and UI/UX Development, Software Development Workflow and Lifecycle, Database Management and Migration, Application Architecture and Design Principles, Dependency and Environment Configuration, Operational Error Handling and Monitoring"
+    "A duplicate charge is defined as two charges on the same account for the same plan and billing period posted within 72 hours of each other.\nRegarding what happens next:\nA confirmed duplicate charge is escalated to the billing team for review.Support never promises a refund during the investigation.Billing reviews are normally decided within 5 business days, and refund processing (where approved) happens in the billing system, which may take additional days to appear with your bank."
   ],
-  "responseMs": 8906,
-  "verdict": "FAIL",
-  "failures": [
-    "answered with the out-of-scope refusal instead of the policy"
-  ],
-  "refusal": true
+  "responseMs": 13424,
+  "verdict": "PASS",
+  "failures": [],
+  "refusal": false
 }

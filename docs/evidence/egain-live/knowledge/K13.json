@@ -1,15 +1,15 @@
 {
-  "ranAt": "2026-11-11T13:14:08.322Z",
+  "ranAt": "2026-11-11T14:39:29.379Z",
   "id": "K13",
   "area": "unsupported request",
   "source": "(out of scope)",
   "question": "Can you write me a poem about the weather in Paris?",
-  "reply": "Kindly note that I can only answer queries related to:  Action Gateway and Workflow Orchestration, Evidence and Documentation Management, Automated Testing and Quality Assurance, Authentication and Authorization, Application Security and Compliance, CI/CD Pipeline Configuration and Management, eGain Integration and Hackathon Strategy, Data Privacy and Protection, Infrastructure and Containerization, Frontend and UI/UX Development, Software Development Workflow and Lifecycle, Database Management and Migration, Application Architecture and Design Principles, Dependency and Environment Configuration, Operational Error Handling and Monitoring",
+  "reply": "Kindly note that I can only answer queries related to:  Organizational Policy Compliance and Governance, Account Modification and Subscription Management, Billing and Financial Discrepancy Resolution, Account Authentication and Security, Data Governance and Lifecycle Management, Warranty Claim Processing, System Incident and Error Resolution, Appointment and Scheduling Services, Customer Support Escalation Management",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "Kindly note that I can only answer queries related to:  Action Gateway and Workflow Orchestration, Evidence and Documentation Management, Automated Testing and Quality Assurance, Authentication and Authorization, Application Security and Compliance, CI/CD Pipeline Configuration and Management, eGain Integration and Hackathon Strategy, Data Privacy and Protection, Infrastructure and Containerization, Frontend and UI/UX Development, Software Development Workflow and Lifecycle, Database Management and Migration, Application Architecture and Design Principles, Dependency and Environment Configuration, Operational Error Handling and Monitoring"
+    "Kindly note that I can only answer queries related to:  Organizational Policy Compliance and Governance, Account Modification and Subscription Management, Billing and Financial Discrepancy Resolution, Account Authentication and Security, Data Governance and Lifecycle Management, Warranty Claim Processing, System Incident and Error Resolution, Appointment and Scheduling Services, Customer Support Escalation Management"
   ],
-  "responseMs": 8383,
+  "responseMs": 8368,
   "verdict": "PASS",
   "failures": [],
   "refusal": true

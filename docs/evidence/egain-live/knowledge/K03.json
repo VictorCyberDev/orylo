@@ -1,20 +1,16 @@
 {
-  "ranAt": "2026-11-11T13:08:31.478Z",
+  "ranAt": "2026-11-11T14:25:33.588Z",
   "id": "K03",
   "area": "identity requirements",
   "source": "identity-verification.md",
   "question": "What do you need from me before you can look at or change my account?",
-  "reply": "Please contact our customer care for more details.",
+  "reply": "Before I can look up or change your account, I need to confirm two things:\nThe email address on the accountThe account number",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "Sorry, I am not able to answer your query.",
-    "Please contact our customer care for more details."
+    "Before I can look up or change your account, I need to confirm two things:\nThe email address on the accountThe account number"
   ],
-  "responseMs": 14961,
-  "verdict": "FAIL",
-  "failures": [
-    "missing governing fact /email/i",
-    "missing governing fact /account number/i"
-  ],
+  "responseMs": 11873,
+  "verdict": "PASS",
+  "failures": [],
   "refusal": false
 }

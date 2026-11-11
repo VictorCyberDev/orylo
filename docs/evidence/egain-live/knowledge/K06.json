@@ -1,18 +1,16 @@
 {
-  "ranAt": "2026-11-11T13:10:23.605Z",
+  "ranAt": "2026-11-11T14:42:18.802Z",
   "id": "K06",
   "area": "missing cancellation evidence",
   "source": "cancellation-policy.md + escalation-policy.md",
   "question": "I can't find any record or proof that I asked to cancel. Can you cancel it as of last month anyway?",
-  "reply": "Kindly note that I can only answer queries related to:  Action Gateway and Workflow Orchestration, Evidence and Documentation Management, Automated Testing and Quality Assurance, Authentication and Authorization, Application Security and Compliance, CI/CD Pipeline Configuration and Management, eGain Integration and Hackathon Strategy, Data Privacy and Protection, Infrastructure and Containerization, Frontend and UI/UX Development, Software Development Workflow and Lifecycle, Database Management and Migration, Application Architecture and Design Principles, Dependency and Environment Configuration, Operational Error Handling and Monitoring",
+  "reply": "I see that you are asking to cancel your subscription as of last month, but you cannot find any record or proof of a previous cancellation request.\nAccording to our policy, a cancellation takes effect on the date the request was received, and retroactive corrections for missed applications of a request are only available for requests made within the last 30 days, provided there is customer confirmation. Because there is no record of a prior request, we cannot validate a past request date.\nIf you would like to dispute a past charge, you may ask for any charge posted in the last 60 days to be reviewed by the billing team by requesting a billing review. Please note that cancelling your subscription stops future billing, but past charges must be handled through this billing review process.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "Kindly note that I can only answer queries related to:  Action Gateway and Workflow Orchestration, Evidence and Documentation Management, Automated Testing and Quality Assurance, Authentication and Authorization, Application Security and Compliance, CI/CD Pipeline Configuration and Management, eGain Integration and Hackathon Strategy, Data Privacy and Protection, Infrastructure and Containerization, Frontend and UI/UX Development, Software Development Workflow and Lifecycle, Database Management and Migration, Application Architecture and Design Principles, Dependency and Environment Configuration, Operational Error Handling and Monitoring"
+    "I see that you are asking to cancel your subscription as of last month, but you cannot find any record or proof of a previous cancellation request.\nAccording to our policy, a cancellation takes effect on the date the request was received, and retroactive corrections for missed applications of a request are only available for requests made within the last 30 days, provided there is customer confirmation. Because there is no record of a prior request, we cannot validate a past request date.\nIf you would like to dispute a past charge, you may ask for any charge posted in the last 60 days to be reviewed by the billing team by requesting a billing review. Please note that cancelling your subscription stops future billing, but past charges must be handled through this billing review process."
   ],
-  "responseMs": 8932,
-  "verdict": "FAIL",
-  "failures": [
-    "answered with the out-of-scope refusal instead of the policy"
-  ],
-  "refusal": true
+  "responseMs": 13421,
+  "verdict": "PASS",
+  "failures": [],
+  "refusal": false
 }

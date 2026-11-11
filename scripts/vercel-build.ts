@@ -10,5 +10,11 @@ if (process.env.SKIP_DB_SETUP === "1" || !process.env.DATABASE_URL) {
   const run = (args: string[]) =>
     execFileSync("npx", ["tsx", ...args], { stdio: "inherit", env: process.env });
   run(["scripts/migrate.ts"]);
-  run(["scripts/seed.ts"]); // prints "Database already has data" and exits 0 when already seeded
+  // Seeding is refused under NODE_ENV=production unless explicitly allowed. It is allowed HERE only because this step (1) never wipes —
+  // it exits 0 without touching anything when the database already has data — and (2) scripts/seed.ts refuses the public default
+  // password on an https deployment, so DEMO_PASSWORD must be a real secret.
+  execFileSync("npx", ["tsx", "scripts/seed.ts"], {
+    stdio: "inherit",
+    env: { ...process.env, ALLOW_PRODUCTION_SEED: "yes" },
+  });
 }
