@@ -61,7 +61,7 @@ sequenceDiagram
 | 11 | Polling (`AutoRefresh`) instead of realtime | No realtime infra; no unsupported claims | 15–20 s staleness |
 | 12 | Postgres-backed rate limiter | Works across instances without Redis | Not tuned; contention under heavy load |
 
-## Data model (47 tables; see `src/db/schema.ts`)
+## Data model (50 tables; see `src/db/schema.ts`)
 Identity (4, Better Auth) · tenancy (organizations, memberships, invitations, api_keys, queues) · customers & access grants ·
 policy (documents, versions, approvals, knowledge_gaps) · workflows (definitions, versions, executions, step executions) ·
 cases (resolution_cases, case_objectives, case_events, case_evidence, assignments) · actions (requests, approvals, attempts,

@@ -54,6 +54,17 @@ test.describe("approvals", () => {
     await expect(anaRow.getByText("Your role can't decide approvals")).toBeVisible();
     await expect(anaRow.getByRole("button", { name: "Approve" })).toHaveCount(0);
 
+    // on a phone the approver can see and reach the decision without scrolling sideways (found by visual review)
+    const phone = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+    await signIn(phone, "ben@northfield.example");
+    await expect(phone).toHaveURL(STAFF, { timeout: 20_000 });
+    await phone.goto("/app/approvals");
+    await expect(phone.getByRole("button", { name: "Approve" }).first()).toBeInViewport();
+    const over = await phone.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(over).toBeLessThanOrEqual(1);
+
     // the approver decides
     const ben = await as(browser, "ben@northfield.example", STAFF);
     await ben.goto("/app/approvals");

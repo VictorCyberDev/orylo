@@ -14,14 +14,14 @@ has a regression test in `tests/security/review-findings.test.ts` unless noted. 
 | 6 | Med | DB errors logged bound parameters (PII, upload bytes) | **FIXED** — `logError` strips `params:` | F6 |
 | 7 | Med | Demo credentials shown by default | **FIXED** — off unless `DEMO_MODE=true`; read at request time | not unit-tested; page loads covered by axe |
 | 8 | Med | Placeholder/short production secrets accepted; receipt key failed after mutation | **FIXED** — enforced at runtime (not build), checked before any provider call | F8; observed live: `next start` refused the dev secret |
-| 9 | Med | Rate limiter keyed on spoofable XFF; table grew unbounded | **PARTIAL** — right-most/`x-real-ip` used, opportunistic purge. Still only trustworthy behind a proxy you control | F9 |
-| 10 | Med | Open sign-up + enumeration; in-memory auth rate limit | **PARTIAL** — `/api/auth/sign-up/email` now 403 (e2e). Auth rate limiter is still in-memory (per instance) — **OPEN** for multi-instance deploys |  `auth.spec.ts` |
-| 11 | Low–Med | No quotas on authenticated writes; unbounded export | **PARTIAL** — evidence cap (10 files/10 MB per case), 10 new cases/hour/customer. Other quotas and streaming export **OPEN** | F11 |
+| 9 | Med | Rate limiter keyed on spoofable XFF; table grew unbounded | **FIXED (2026-11-11)** — client IP is taken only through an explicit trust boundary (`TRUSTED_PROXY_HOPS`, default 0 = ignore forwarding headers); old rows are purged by the maintenance job. Correct only if the operator sets the real hop count (documented in `docs/operations/deployment-contract.md`) | `tests/unit/config-and-crypto.test.ts`, `tests/security/privacy-and-evidence.test.ts` |
+| 10 | Med | Open sign-up + enumeration; in-memory auth rate limit | **FIXED (2026-11-11)** — sign-up closed (403, e2e); auth limiter storage is the database (`auth_rate_limits`, shared by all instances); the server-action sign-in and password-reset paths (which bypass Better Auth's HTTP limiter) have explicit per-IP+email and per-account throttles | `auth.spec.ts`, `recovery-and-access.spec.ts` (sign-in throttling in a real browser) |
+| 11 | Low–Med | No quotas on authenticated writes; unbounded export | **FIXED (2026-11-11)** — database-backed quotas on case creation, evidence, escalation, erasure, access-link opening and other customer writes; evidence validated structurally (magic bytes, size, type) and encrypted at rest (AES-256-GCM); organization export is a bounded NDJSON stream. **No malware-scanning engine** exists (stated residual) | F11, `privacy-and-evidence.test.ts`, `customer-journeys.spec.ts` (disguised file refused) |
 | 12 | Low | Policy rules unvalidated; bad values fail open | **FIXED** — typed rule schema; malformed stored values dropped (fail closed) | F12 |
 | 13 | Low | "No" after "yes" could execute; no consent expiry | **FIXED** — answers final, 72 h TTL. Exhausted-attempt re-execution is blocked by the state machine | F13 |
 | 14 | Low | Internal rule keys / adapter text visible to customers | **FIXED** — fixed wording; detail kept in internal payload | F14 |
-| 15 | Low | GET grant link sets cookie (login CSRF), token in URL, cookie path | **PARTIAL** — sign-out now clears the grant cookie. Interstitial POST exchange and path scoping **OPEN** | — |
-| 16 | Low | CSP `unsafe-inline`, no HSTS/COOP | **PARTIAL** — HSTS (production) and COOP added. Nonce-based CSP **OPEN** | — |
+| 15 | Low | GET grant link sets cookie (login CSRF), token in URL, cookie path | **FIXED (2026-11-11)** for the GET-with-side-effect problem — opening `/access/<token>` renders an interstitial; only an explicit POST sets the session, so a mail scanner or prefetch cannot start one; sign-out clears the cookie. The token still appears in the URL (read-only, 24 h) — **ACCEPTED residual** | `recovery-and-access.spec.ts` (no cookie after a plain GET; read-only view after confirming) |
+| 16 | Low | CSP `unsafe-inline`, no HSTS/COOP | **FIXED for scripts (2026-11-11)** — per-request nonce CSP with `strict-dynamic` and no `'unsafe-inline'`/`'unsafe-eval'` for scripts, `frame-ancestors 'none'`; HSTS (production) and COOP. **Residual:** `style-src` still allows `'unsafe-inline'` (React/Radix inline styles) | `recovery-and-access.spec.ts` (CSP header on every page, zero console violations, injected inline handler blocked) |
 | 17 | Low | API-key details | **PARTIAL** — dead `cases:read` scope removed. Rate limit after auth, email-keyed lockout, `Idempotency-Key` semantics (audit-only; replay safety comes from the action id) documented, otherwise **OPEN/ACCEPTED** | — |
 | 18 | Low | 32-bit receipt ids | **FIXED** — 64 bits | F18 |
 | 19 | Low | Invitation role not validated; invalid dates → 500 | **FIXED** | F3 / cases page |
@@ -32,4 +32,18 @@ has a regression test in `tests/security/review-findings.test.ts` unless noted. 
 Categories the reviewer found clean: SQL injection, stored/reflected XSS, SSRF, open redirects, tenant isolation (no cross-tenant path found),
 hard-coded real secrets.
 
-Still **not** done by anyone: dynamic testing, fuzzing, penetration testing, review of the Better Auth library itself, load/DoS testing.
+## Added 2026-11-11 (same review, second pass by the implementer — not independent)
+
+| Item | Status |
+|---|---|
+| Customer data export / erasure with tamper-safe redaction path | Built and browser-tested; the redaction path is the **only** sanctioned rewrite of append-only tables and is audited |
+| Operators could not assign cases (assignee list required member-management rights) | **FIXED** — found by a browser journey; regression test `assignable-members.test.ts`; the list exposes names only |
+| Org settings could not be saved on plans without custom branding | **FIXED** — entitlement checked only when branding actually changes; `org-settings.test.ts` |
+| Invite sign-up redirect race (account created, page showed "invitation not valid") | **FIXED** — server-side redirect; browser journey |
+| Production configuration | Fail-fast: placeholder/short secrets, wrong-length evidence key and unflagged demo mode refuse to start |
+
+## Not done — reported separately, not substituted by code
+
+- **MFA / SSO: not built.** Passwords only (scrypt via Better Auth).
+- **Penetration test: not done.** Application tests and a static review are not a penetration test and must not be described as one.
+- Fuzzing, load/DoS testing, review of the Better Auth library itself, a malware-scanning engine for uploads, secrets scanning of the repository history.

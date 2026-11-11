@@ -32,7 +32,7 @@ Orylo → provider adapter (simulated); eGain agent → Orylo (bearer key + cust
 | Credential handling | API keys `oryk_…` shown once, stored SHA-256; customer tokens 32-byte random, hashed, 30-min TTL; invitations hashed + expiring + email-bound; audit metadata redacts secret-like keys | `workflows-and-modules.test.ts`, `egain-api.spec.ts` |
 | Unsafe upload | size ≤ 2 MB; allow-list of 4 types; extension + magic-byte match; sanitized names; served as attachment with `nosniff` and sandbox CSP | `workflows-and-modules.test.ts` › uploads |
 | Open redirect | `next` accepted only for `/app`, `/portal`, `/invite` paths | `journey.spec.ts` › unsafe `next` ignored |
-| XSS | React escaping everywhere; no `dangerouslySetInnerHTML` except fixed JSON-LD and theme bootstrap; CSP (note: `'unsafe-inline'` scripts required by Next's inline bootstrap) | not separately tested (gap) |
+| XSS | React escaping everywhere; no `dangerouslySetInnerHTML` except fixed JSON-LD and theme bootstrap; per-request nonce CSP with `strict-dynamic` — no `'unsafe-inline'` for scripts (styles still allow it) | `recovery-and-access.spec.ts` (header, zero violations, injected handler blocked) tested (gap) |
 | CSRF | server actions: Next origin checks; bearer REST: not cookie-authenticated | not separately tested (gap) |
 | Injection | Drizzle parameterization; the few raw `sql` fragments interpolate only bound parameters; search input escaped for `LIKE` | not fuzzed (gap) |
 | Information disclosure | uniform error envelope; customer views are projections (no executor ids, authorization refs, internal notes, policy ids) | `policy-and-isolation.test.ts` › customer boundaries; `egain-api.spec.ts` |
@@ -45,3 +45,7 @@ Orylo → provider adapter (simulated); eGain agent → Orylo (bearer key + cust
 - Rate limiter trusts `x-forwarded-for`.
 - Demo credentials page (`/demo`) must be disabled (`DEMO_MODE=false`) outside demos.
 - Superuser database access can disable the evidence triggers.
+
+## Updates 2026-11-11
+
+Mitigations added since the first draft: database-backed authentication rate limits (all instances share them), explicit trust boundary for client IPs (`TRUSTED_PROXY_HOPS`), read-only access links that require an explicit POST before a session exists, encrypted + structurally validated evidence, per-customer write quotas, fail-fast production configuration, durable job worker with retry/expiry/retention (no manual recovery commands), data export and audited erasure. **Still unmitigated or unproven:** MFA/SSO (absent), external penetration test (not done), malware scanning of uploads (absent), `style-src 'unsafe-inline'`, denial-of-service/load behaviour (untested), the Better Auth library itself (not reviewed).

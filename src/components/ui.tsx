@@ -294,7 +294,12 @@ export function DataTable({
   className?: string;
 }) {
   return (
-    <div className={cn("overflow-x-auto", className)} tabIndex={0} role="region" aria-label={caption}>
+    <div
+      className={cn("relative overflow-x-auto", className)}
+      tabIndex={0}
+      role="region"
+      aria-label={caption}
+    >
       <table className="w-full min-w-[640px] border-collapse text-left text-sm">
         <caption className="sr-only">{caption}</caption>
         {children}

@@ -40,74 +40,110 @@ export default async function Approvals() {
         {rows.length === 0 ? (
           <EmptyState title="Nothing waiting">No approvals are pending.</EmptyState>
         ) : (
-          <DataTable caption="Pending approvals">
-            <thead>
-              <tr>
-                <Th>Case</Th>
-                <Th>Customer</Th>
-                <Th>Step</Th>
-                <Th>Amount</Th>
-                <Th>Waiting since</Th>
-                <Th>Decision</Th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            <ul className="divide-y divide-border md:hidden" aria-label="Pending approvals">
               {rows.map(({ a, c, cust }) => (
-                <tr key={a.id}>
-                  <Td>
+                <li key={a.id} className="space-y-3 p-4">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <Link className="t-code underline" href={`/app/cases/${c.reference}`}>
                       {c.reference}
                     </Link>
-                  </Td>
-                  <Td>{cust}</Td>
-                  <Td>{a.operation}</Td>
-                  <Td>
-                    <Money cents={a.amountCents} />
-                  </Td>
-                  <Td>
-                    <When at={a.updatedAt} />
-                  </Td>
-                  <Td>
-                    {canDecide ? (
-                      <ActionForm action={approvalAction} className="space-y-2">
-                        <input type="hidden" name="requestId" value={a.id} />
-                        <input type="hidden" name="caseRef" value={c.reference} />
-                        <label htmlFor={`r-${a.id}`} className="sr-only">
-                          Reason
-                        </label>
-                        <input
-                          id={`r-${a.id}`}
-                          name="reason"
-                          placeholder="Reason (optional)"
-                          className={`${inputClass} min-h-9`}
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            name="decision"
-                            value="approve"
-                            className="min-h-9 rounded-md bg-primary px-3 text-sm text-primary-fg"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            name="decision"
-                            value="decline"
-                            className="min-h-9 rounded-md border border-border-strong px-3 text-sm"
-                          >
-                            Decline
-                          </button>
-                        </div>
-                      </ActionForm>
-                    ) : (
-                      <span className="t-caption">Your role can&apos;t decide approvals</span>
-                    )}
-                  </Td>
-                </tr>
+                    <span className="t-num font-medium">
+                      <Money cents={a.amountCents} />
+                    </span>
+                  </div>
+                  <p className="text-sm">
+                    {cust} · <span className="t-code">{a.operation}</span>
+                  </p>
+                  <p className="t-caption">
+                    Waiting since <When at={a.updatedAt} />
+                  </p>
+                  <Decision a={a} caseRef={c.reference} canDecide={canDecide} idPrefix="m" />
+                </li>
               ))}
-            </tbody>
-          </DataTable>
+            </ul>
+            <DataTable caption="Pending approvals" className="hidden md:block">
+              <thead>
+                <tr>
+                  <Th>Case</Th>
+                  <Th>Customer</Th>
+                  <Th>Step</Th>
+                  <Th>Amount</Th>
+                  <Th>Waiting since</Th>
+                  <Th>Decision</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(({ a, c, cust }) => (
+                  <tr key={a.id}>
+                    <Td>
+                      <Link className="t-code underline" href={`/app/cases/${c.reference}`}>
+                        {c.reference}
+                      </Link>
+                    </Td>
+                    <Td>{cust}</Td>
+                    <Td>{a.operation}</Td>
+                    <Td>
+                      <Money cents={a.amountCents} />
+                    </Td>
+                    <Td>
+                      <When at={a.updatedAt} />
+                    </Td>
+                    <Td>
+                      <Decision a={a} caseRef={c.reference} canDecide={canDecide} idPrefix="t" />
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </DataTable>
+          </>
         )}
       </Card>
     </>
+  );
+}
+
+function Decision({
+  a,
+  caseRef,
+  canDecide,
+  idPrefix,
+}: {
+  a: { id: string };
+  caseRef: string;
+  canDecide: boolean;
+  idPrefix: string;
+}) {
+  if (!canDecide) return <span className="t-caption">Your role can&apos;t decide approvals</span>;
+  return (
+    <ActionForm action={approvalAction} className="space-y-2">
+      <input type="hidden" name="requestId" value={a.id} />
+      <input type="hidden" name="caseRef" value={caseRef} />
+      <label htmlFor={`${idPrefix}-r-${a.id}`} className="sr-only">
+        Reason
+      </label>
+      <input
+        id={`${idPrefix}-r-${a.id}`}
+        name="reason"
+        placeholder="Reason (optional)"
+        className={`${inputClass} min-h-9`}
+      />
+      <div className="flex gap-2">
+        <button
+          name="decision"
+          value="approve"
+          className="min-h-11 rounded-md bg-primary px-4 text-sm text-primary-fg"
+        >
+          Approve
+        </button>
+        <button
+          name="decision"
+          value="decline"
+          className="min-h-11 rounded-md border border-border-strong px-4 text-sm"
+        >
+          Decline
+        </button>
+      </div>
+    </ActionForm>
   );
 }

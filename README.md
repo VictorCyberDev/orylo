@@ -43,13 +43,16 @@ npm run dev                           # http://localhost:3000  → /demo lists t
 
 > `npm run dev` accepts the placeholder secrets in `.env.example`. `npm start` (production mode) and the
 > Playwright suite **refuse** placeholder/short secrets — put random values in `.env.local`
-> (`openssl rand -base64 32` for `BETTER_AUTH_SECRET` and `RECEIPT_SIGNING_KEY`). `/demo` credentials show only when `DEMO_MODE=true`.
+> (`openssl rand -base64 32` for `BETTER_AUTH_SECRET`, `RECEIPT_SIGNING_KEY`, `EVIDENCE_ENCRYPTION_KEY` and `CRON_SECRET`). `/demo` credentials show only when `DEMO_MODE=true`.
 
 Demo password for every seeded user: `OryloDemo!2026` (shown on `/demo` only while `DEMO_MODE` is not `false`).
 Reset to a clean synthetic world any time: `npm run demo:reset`.
 
-> The Docker Compose file was written but **not exercised** in the authoring environment (no Docker daemon); tests
-> ran against a native PostgreSQL 16 instance.
+> **Container path (verified locally, not on a host):** `docker compose up --build` starts PostgreSQL 16 and the app image
+> (migrations run on start; `http://localhost:3000`; throwaway demo secrets). Load demo data with `docker compose run --rm app seed`.
+> Behind a corporate/CI proxy that re-signs TLS, build with `--build-context ca=<dir containing ca-bundle.crt>`.
+> See `docs/operations/deployment-contract.md` for the required environment, migration/rollback/backup, and what is **not** verified
+> (no hosted deployment exists).
 
 ## Commands
 | Command | Purpose |
