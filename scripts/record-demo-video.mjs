@@ -169,7 +169,6 @@ for k,lines in cards.items():
 `;
 writeFileSync(`${tmp}/cards.py`, py);
 execFileSync("python3", [`${tmp}/cards.py`, JSON.stringify(cards), tmp]);
-const clip = (name, secs) => ({ name, secs });
 const seq = [
   ["c0", 3],
   ["c1", 2.5],
