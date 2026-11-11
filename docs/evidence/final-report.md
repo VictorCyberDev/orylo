@@ -30,6 +30,8 @@ customer**. The live eGain agent (Gate H) is **BLOCKED**: no eGain tenant access
 | One-minute video | **BLOCKED** | cannot be recorded truthfully yet |
 | Devpost text | **PREPARED, not applied** | `docs/hackathon/devpost-update.md` (the live page's founder story is to be kept) |
 
+**GitHub Actions for this update:** run 43031396125 on `2476860` — **success** (https://github.com/VictorCyberDev/orylo/actions/runs/43031396125). The run for `f888b68` (43030596809) shows *cancelled*: it was superseded by the next push, not a failure. Later commits are documentation only.
+
 Test totals after this update: **139** database-backed/unit tests and **80** offline browser tests (all passing locally); live tests (not in CI): widget 4/4 pass, knowledge 2/13 pass (both are correct refusals).
 Defects found by this work and fixed: the official loader could not run under a strict CSP (hash allowance, proven load-bearing); the launch button was ignored if clicked in the first seconds (now verified + retried); `/demo` printed the shared password whenever `DEMO_MODE` was on (now reviewer-code gated for public deployments; the seed refuses the public default password on an https deployment).
 
