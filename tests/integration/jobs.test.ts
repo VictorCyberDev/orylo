@@ -23,7 +23,7 @@ import {
 } from "@/jobs/queue";
 import { runDueJobs } from "@/jobs/runner";
 import { expireStaleConsents, purgeRetention, runMaintenance } from "@/jobs/maintenance";
-import { actionsForCase, confirmAction } from "@/domain/actions";
+import { confirmAction } from "@/domain/actions";
 import { addEvidence } from "@/domain/uploads";
 import { BUILTIN_WORKFLOWS } from "@/workflows/definitions";
 import { publishWorkflowVersion, saveWorkflowDraft } from "@/domain/admin";
