@@ -1,0 +1,9 @@
+{
+  "ranAt": "2026-11-11T15:32:40.232Z",
+  "site": "https://orylo-demo.vercel.app",
+  "caseRef": "ORY-1005",
+  "receiptVerified": true,
+  "tamperedReceiptRejected": true,
+  "billingReviewState": "pending (2 of 3 verified), no refund",
+  "crossCustomerStatus": 404
+}

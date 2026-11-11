@@ -1,5 +1,5 @@
 {
-  "ranAt": "2026-11-11T15:17:14.181Z",
+  "ranAt": "2026-11-11T15:32:20.016Z",
   "site": "https://orylo-demo.vercel.app",
   "pages": {
     "/": 200,
@@ -19,7 +19,7 @@
       "oldestDueSeconds": 0
     }
   },
-  "csp": "default-src 'self'; script-src 'self' 'nonce-ZTdhYjMwOGQtOWI5OS00NzcyLTkxODUtMzY1MTViMDk3NTY2' 'strict-dynamic' 'unsafe-hashes' 'sha256-5X3p0dG3QAvxPR0b6Av1PH/Eaf1fbooQzfxMViLUgqs=' 'sha256-lo7ZdP6kFds+wf1WMWvn7MhcFVFJV44kAXODRevzRZ8='; style-src 'self' 'unsafe-inline' https://ai.egain.cloud https://cdn.aiagent.egain.cloud https://fonts.googleapis.com; img-src 'self' data: blob: https://ai.egain.cloud https://cdn.aiagent.egain.cloud; font-src 'self' data: https://cdn.aiagent.egain.cloud https://fonts.gstatic.com; media-src 'self' https://cdn.aiagent.egain.cloud; connect-src 'self' https://ai.egain.cloud https://api.ai.egain.cloud https://cdn.aiagent.egain.cloud; frame-src 'self' https://ai.egain.cloud; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+  "csp": "default-src 'self'; script-src 'self' 'nonce-YWUyZDQyYjktZGViMy00NmNiLWI3MDktMjE0MmU1ZmQxNDIx' 'strict-dynamic' 'unsafe-hashes' 'sha256-5X3p0dG3QAvxPR0b6Av1PH/Eaf1fbooQzfxMViLUgqs=' 'sha256-lo7ZdP6kFds+wf1WMWvn7MhcFVFJV44kAXODRevzRZ8='; style-src 'self' 'unsafe-inline' https://ai.egain.cloud https://cdn.aiagent.egain.cloud https://fonts.googleapis.com; img-src 'self' data: blob: https://ai.egain.cloud https://cdn.aiagent.egain.cloud; font-src 'self' data: https://cdn.aiagent.egain.cloud https://fonts.gstatic.com; media-src 'self' https://cdn.aiagent.egain.cloud; connect-src 'self' https://ai.egain.cloud https://api.ai.egain.cloud https://cdn.aiagent.egain.cloud; frame-src 'self' https://ai.egain.cloud; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
   "tickWithoutSecret": 401,
   "tickWithSecret": {
     "ok": true,
