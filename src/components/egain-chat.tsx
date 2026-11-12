@@ -82,6 +82,9 @@ export function removeEgainWidget() {
   for (const id of WIDGET_DOM_IDS) document.getElementById(id)?.remove();
   // the loader's own about:blank "Chat" helper iframe
   document.querySelectorAll('iframe[title="Chat"]').forEach((f) => f.remove());
+  // The loader's container div. If it survives teardown, a re-injected loader can treat the widget as
+  // already mounted and never create the launcher (seen intermittently after back-navigation).
+  document.getElementById("egain-chat-wrapper")?.remove();
   delete window.egainDockAi;
   setStatus("off");
 }
