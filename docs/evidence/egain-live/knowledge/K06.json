@@ -1,15 +1,15 @@
 {
-  "ranAt": "2026-11-11T15:23:56.303Z",
+  "ranAt": "2026-11-12T10:21:14.307Z",
   "id": "K06",
   "area": "missing cancellation evidence",
   "source": "cancellation-policy.md + escalation-policy.md",
   "question": "I can't find any record or proof that I asked to cancel. Can you cancel it as of last month anyway?",
-  "reply": "Without a record or proof of a prior request, we cannot backdate a cancellation to last month. Per our policy, cancellations take effect on the date the request is received. However, we can either cancel your subscription effective today or open a billing review for past charges if you wish to dispute them.",
+  "reply": "A cancellation takes effect on the date the request was received, not the date it was processed, and a cancellation cannot be backdated without a recorded previous request. However, you can request a billing review for any charge posted in the last 60 days if you would like the billing team to examine it.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "Without a record or proof of a prior request, we cannot backdate a cancellation to last month. Per our policy, cancellations take effect on the date the request is received. However, we can either cancel your subscription effective today or open a billing review for past charges if you wish to dispute them."
+    "A cancellation takes effect on the date the request was received, not the date it was processed, and a cancellation cannot be backdated without a recorded previous request. However, you can request a billing review for any charge posted in the last 60 days if you would like the billing team to examine it."
   ],
-  "responseMs": 13398,
+  "responseMs": 12914,
   "verdict": "PASS",
   "failures": [],
   "refusal": false

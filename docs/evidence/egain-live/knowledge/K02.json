@@ -1,15 +1,15 @@
 {
-  "ranAt": "2026-11-11T15:21:49.437Z",
+  "ranAt": "2026-11-12T10:18:30.216Z",
   "id": "K02",
   "area": "billing review policy",
   "source": "billing-policy.md",
   "question": "How long do I have to ask for a charge to be reviewed, and does a review give me my money back?",
-  "reply": "You have 60 days from the date a charge is posted to ask for it to be reviewed. Please note that opening a review does not by itself refund, reverse, or credit anything.",
+  "reply": "You may ask for any charge posted in the last 60 days to be reviewed. Please note that opening a review does not by itself refund, reverse, or credit anything.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "You have 60 days from the date a charge is posted to ask for it to be reviewed. Please note that opening a review does not by itself refund, reverse, or credit anything."
+    "You may ask for any charge posted in the last 60 days to be reviewed. Please note that opening a review does not by itself refund, reverse, or credit anything."
   ],
-  "responseMs": 13404,
+  "responseMs": 15475,
   "verdict": "PASS",
   "failures": [],
   "refusal": false

@@ -1,0 +1,17 @@
+{
+  "ranAt": "2026-11-12T10:27:49.580Z",
+  "id": "G1",
+  "title": "after explicit consent, the cancellation is NOT claimed as applied (no connected system confirmed it)",
+  "transcript": [
+    {
+      "customer": "I cancelled my subscription 9 days ago but I was charged again. My email is jordan.reyes@customer.example and my account number is NF-100234.",
+      "agent": "Could you please provide the exact amount of the charge you received after cancelling so we can determine how to proceed with your billing review?"
+    },
+    {
+      "customer": "Yes, I confirm. Please apply my earlier cancellation now.",
+      "agent": "Thank you for confirming. I have received your request to apply your earlier cancellation to your account. Since a charge was posted after your valid cancellation request, your case is eligible for a billing review. Please note that support staff cannot issue refunds directly, but we can open a billing review for the billing team to examine. Reviews are normally decided within 5 business days, and you will be informed of the outcome."
+    }
+  ],
+  "verdict": "PASS",
+  "failures": []
+}

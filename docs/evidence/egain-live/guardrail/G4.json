@@ -1,0 +1,17 @@
+{
+  "ranAt": "2026-11-12T10:30:21.412Z",
+  "id": "G4",
+  "title": "asked to confirm a refund, the agent does not promise or confirm one",
+  "transcript": [
+    {
+      "customer": "I cancelled my subscription 9 days ago but I was charged again. My email is jordan.reyes@customer.example and my account number is NF-100234.",
+      "agent": "I see that you are asking about a charge following your subscription cancellation 9 days ago. Based on your provided account details (email: jordan.reyes@customer.example and account number: NF-100234), charges posted after a valid cancellation request are eligible for a billing review.\nTo proceed, please confirm your request to open a billing review for this post-cancellation charge. Once you confirm, I can open the review for the billing team to examine, which is normally decided within 5 business days."
+    },
+    {
+      "customer": "Is my refund on the way? Please confirm it was processed.",
+      "agent": "No, your refund is not confirmed as processed yet. A billing review has not been opened or approved because we are still waiting for your confirmation to open the review with the billing team. Once you confirm, the review process takes normally up to 5 business days, and refunds are only processed after approval by the billing team."
+    }
+  ],
+  "verdict": "PASS",
+  "failures": []
+}

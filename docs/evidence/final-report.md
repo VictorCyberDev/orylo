@@ -13,6 +13,26 @@ customer/operator/admin interfaces, data export/erasure, an eGain-facing HTTP ac
 customer**. The live eGain agent (Gate H) is **BLOCKED**: no eGain tenant access exists here, and obtaining it needs the owner's own account (see `egain/published-agent-acceptance-log.md` §0).
 **Readiness verdict: a verified, honest prototype and eGain-ready backend; NOT production-ready and NOT hackathon-submittable as an eGain entry until the owner completes the eGain side.**
 
+## 0-final-2. Update 2026-11-12 — commissioning pass (what moved, what is still the owner's)
+
+| ID | Area | Status | Evidence |
+|---|---|---|---|
+| K1 | Knowledge, 13 live cases | **PARTIAL — 12 of 13** (K10 fails). K08, which failed on 2026-11-11, passed this run **without any change on my side in eGain**: treat that as run-to-run variation, not a fix | `docs/evidence/egain-live-tests.md` |
+| K2 | Action truthfulness | **PARTIAL** — across 10 conversations (workflow W1–W5, guardrail G1–G5) **no invented completion was detected** (last run's W3 had them); but G2, G3, G5 fail because the agent never says plainly that a step is *not* done and falls back to "contact customer care". The agent is non-deterministic and I changed nothing in it, so no improvement is claimed | `docs/evidence/egain-live/{workflow,guardrail}/` |
+| — | Root cause in our own text | **FIXED in the repo, NOT YET LIVE** — `refund-review-rules` told the agent to say "a review has been opened" unconditionally; now conditional, plus who-decides, escalation-exists rule and a status vocabulary. Needs re-upload in eGain (owner) | `egain/knowledge-fix.md` 2026-11-12, `egain/OWNER-ACTIONS.md` step 2–3 |
+| W1/W2 | Widget on the production URL | **FAILED / BLOCKED (owner)** — eGain's preflight for `https://orylo-demo.vercel.app` returns no `Access-Control-Allow-Origin` (control: eGain's own origin is admitted). Nothing on Orylo's side can fix it, and I did not proxy or bypass it | `docs/evidence/egain-live/widget-preflight-2026-11-12.txt`, `tests/live/origin.live.spec.ts` |
+| P1 | Native pre-chat | **BLOCKED (owner)** — needs the eGain console; not observable anonymously | `egain/prechat.md`, `OWNER-ACTIONS.md` step 5 |
+| G1 | Guided process bound to intent | **BLOCKED (owner)** | `egain/workflows/failed-cancellation-guided-flow.md`, step 6 |
+| E1/E2 | Callback and email escalation | **FAILED** — W4/K10/G3 return the generic fallback, i.e. no escalation workflow is bound | `OWNER-ACTIONS.md` step 4 |
+| A1 | eGain-originated call reaches Orylo | **BLOCKED (owner)** — none has happened | `OWNER-ACTIONS.md` step 7 |
+| A2/A3 | Gateway security and outcome (deployed API, own client, **not eGain-originated**) | **VERIFIED COMPLETE for the gateway itself** — 14 of 14: no/bad key refused, no account enumeration, consent validation, idempotent replay (same receipt), $50 approval threshold (pending, no receipt), receipt verified publicly + tamper rejected, callback + email records, cross-customer 404, rate limit, operator-console read-back, key revoked afterwards | `tests/live/gateway.live.spec.ts`, `docs/evidence/public/gateway-live.json` |
+| D1 | Public site | **PARTIAL** — gateway and journey checks pass; the 2 real-widget tests fail (above) | `tests/live/public.live.spec.ts` |
+| D2 | Fresh demo | **VERIFIED** — controlled reset after the gateway test; Jordan has no prior cases; reset flag back to `0` | — |
+| V1 | Video | **PARTIAL** — hosted at https://orylo-demo.vercel.app/orylo-demo.mp4 (200, video/mp4); still the honest 49 s recording (widget not working on the site, no native workflow to show). A video host (YouTube) link for Devpost needs the owner's account | `docs/evidence/video/README.md` |
+| S1/S2 | Devpost, organizer | **NOT DONE** — no logins; the organizer's required confirmation is not true | `docs/hackathon/` |
+
+Not claimed anywhere: an eGain-originated action, a native pre-chat/process/escalation workflow, a working widget on the production URL, or a formal submission.
+
 ## 0-final. Update 2026-11-11 (final execution) — supersedes the rows of §0 below where they differ
 
 **Corrections of my earlier statements:** (1) the widget was reported "VERIFIED COMPLETE … works on real hostnames". That was **wrong**: those tests used request interception, which bypasses eGain's CORS check. On the real public origin the widget does **not** load until the owner allows the site in the agent's settings (`docs/evidence/egain-widget-csp.md` finding 6). (2) "Public deployment BLOCKED" is no longer true. (3) "0 of 11 policy cases pass" is no longer true (below).

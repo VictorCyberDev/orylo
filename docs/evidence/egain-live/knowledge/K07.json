@@ -1,15 +1,15 @@
 {
-  "ranAt": "2026-11-11T15:24:37.356Z",
+  "ranAt": "2026-11-12T10:21:55.673Z",
   "id": "K07",
   "area": "duplicate charges",
   "source": "duplicate-charge-investigation.md",
   "question": "I was charged twice for the same month. What counts as a duplicate and what happens next?",
-  "reply": "Two charges on the same account for the same plan and billing period posted within 72 hours of each other are treated as a possible duplicate.\nA confirmed duplicate is escalated to the billing team for review. Please note that support never promises a refund during the investigation.",
+  "reply": "Two charges on the same account for the same plan and billing period posted within 72 hours of each other are treated as a possible duplicate.\nWhen a duplicate is confirmed, it is escalated to the billing team for review. Please note that support never promises a refund during the investigation, and billing reviews are normally decided within 5 business days.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "Two charges on the same account for the same plan and billing period posted within 72 hours of each other are treated as a possible duplicate.\nA confirmed duplicate is escalated to the billing team for review. Please note that support never promises a refund during the investigation."
+    "Two charges on the same account for the same plan and billing period posted within 72 hours of each other are treated as a possible duplicate.\nWhen a duplicate is confirmed, it is escalated to the billing team for review. Please note that support never promises a refund during the investigation, and billing reviews are normally decided within 5 business days."
   ],
-  "responseMs": 13395,
+  "responseMs": 13397,
   "verdict": "PASS",
   "failures": [],
   "refusal": false

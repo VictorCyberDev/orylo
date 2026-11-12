@@ -1,18 +1,16 @@
 {
-  "ranAt": "2026-11-11T15:24:56.775Z",
+  "ranAt": "2026-11-12T10:22:37.789Z",
   "id": "K08",
   "area": "refund review vs completed refund",
   "source": "refund-review-rules.md + billing-policy.md",
   "question": "Will opening a billing review get me a refund today?",
-  "reply": "Opening a billing review does not by itself refund, reverse, or credit anything. Billing reviews are normally decided within 5 business days, and any approved refunds are processed through the billing system.",
+  "reply": "No, opening a billing review does not guarantee a refund or issue one on the same day. Opening a review simply requests the billing team to examine the charge, and billing reviews are normally decided within 5 business days.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "Opening a billing review does not by itself refund, reverse, or credit anything. Billing reviews are normally decided within 5 business days, and any approved refunds are processed through the billing system."
+    "No, opening a billing review does not guarantee a refund or issue one on the same day. Opening a review simply requests the billing team to examine the charge, and billing reviews are normally decided within 5 business days."
   ],
-  "responseMs": 10380,
-  "verdict": "FAIL",
-  "failures": [
-    "missing governing fact /(billing team|team).{0,60}(decide|decision|approve)|decided by/i"
-  ],
+  "responseMs": 13920,
+  "verdict": "PASS",
+  "failures": [],
   "refusal": false
 }

@@ -1,15 +1,15 @@
 {
-  "ranAt": "2026-11-11T15:22:12.830Z",
+  "ranAt": "2026-11-12T10:19:12.176Z",
   "id": "K03",
   "area": "identity requirements",
   "source": "identity-verification.md",
   "question": "What do you need from me before you can look at or change my account?",
-  "reply": "Before looking up or changing your account, I must confirm two things: the email address on the account and your account number.",
+  "reply": "Based on the information you provided, before looking up or changing an account, staff must confirm two things: the email address on the account and the account number.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "Before looking up or changing your account, I must confirm two things: the email address on the account and your account number."
+    "Based on the information you provided, before looking up or changing an account, staff must confirm two things: the email address on the account and the account number."
   ],
-  "responseMs": 14911,
+  "responseMs": 13396,
   "verdict": "PASS",
   "failures": [],
   "refusal": false

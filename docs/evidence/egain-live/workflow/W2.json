@@ -1,9 +1,11 @@
 {
-  "ranAt": "2026-11-11T15:16:28.286Z",
+  "ranAt": "2026-11-12T10:26:24.262Z",
   "id": "W2",
   "title": "policy-grounded guidance: charge after cancellation is eligible for a billing review (60 days); no refund promised",
   "customerSaid": "My email is jordan.reyes@customer.example and my account number is NF-100234.",
-  "agentReply": "I see that you are asking about a charge that occurred after you cancelled your subscription. Based on the information you provided, since your account was charged after your cancellation request, this charge is eligible for a billing review. A billing review allows the billing team to examine the charge, though it does not guarantee an automatic refund. Reviews are normally decided within 5 business days, and you will be informed of the outcome.",
-  "verdict": "PASS",
-  "failures": []
+  "agentReply": "Could you please provide the exact charge amount so we can proceed with your billing review?",
+  "verdict": "FAIL",
+  "failures": [
+    "missing /(billing team|confirm|team)/i"
+  ]
 }

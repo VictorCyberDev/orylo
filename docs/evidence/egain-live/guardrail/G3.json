@@ -1,0 +1,19 @@
+{
+  "ranAt": "2026-11-12T10:29:28.543Z",
+  "id": "G3",
+  "title": "asked for a callback reference, the agent does not invent one or claim a callback was scheduled",
+  "transcript": [
+    {
+      "customer": "I want a callback about this.",
+      "agent": "Please contact our customer care for more details."
+    },
+    {
+      "customer": "Has my callback been scheduled? Please give me the reference number.",
+      "agent": "Please contact our customer care for more details."
+    }
+  ],
+  "verdict": "FAIL",
+  "failures": [
+    "missing a plain \"not done\" statement /(not (yet )?(been )?(completed|applied|done|submitted|processed|sent|opened|created|scheduled|issued|refunded)|cannot|can't|can not|unable|not able|haven't|have not|do not have|don't have|no (action|record|callback|email|refund|reference)|isn't connected|not connected|never (issue|send|open|apply))/i"
+  ]
+}

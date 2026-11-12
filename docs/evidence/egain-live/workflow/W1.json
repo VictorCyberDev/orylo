@@ -1,9 +1,9 @@
 {
-  "ranAt": "2026-11-11T15:16:19.153Z",
+  "ranAt": "2026-11-12T10:26:15.105Z",
   "id": "W1",
   "title": "complaint is understood and answered from the billing policy (the agent may ask for identity first or answer first; both are acceptable), no refund promised",
   "customerSaid": "I cancelled my subscription 9 days ago but I was charged again 3 days ago.",
-  "agentReply": "Could you please provide the email address on your account and your account number so we can look up your account?",
+  "agentReply": "Could you please provide your account number and the exact charge amount so we can proceed with your billing review?",
   "verdict": "PASS",
   "failures": []
 }

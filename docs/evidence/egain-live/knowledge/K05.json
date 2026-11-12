@@ -1,15 +1,15 @@
 {
-  "ranAt": "2026-11-11T15:23:15.426Z",
+  "ranAt": "2026-11-12T10:20:33.902Z",
   "id": "K05",
   "area": "human-approval threshold",
   "source": "refund-review-rules.md",
   "question": "At what charge amount does a billing review need a team member's approval?",
-  "reply": "A billing review for a charge over $50.00 needs a team member's approval before it can be opened.",
+  "reply": "Based on the information provided, a billing review for a charge over $50.00 requires a team member's approval before it can be opened.",
   "allAgentBubbles": [
     "Hi, how can I help you?",
-    "A billing review for a charge over $50.00 needs a team member's approval before it can be opened."
+    "Based on the information provided, a billing review for a charge over $50.00 requires a team member's approval before it can be opened."
   ],
-  "responseMs": 13393,
+  "responseMs": 11904,
   "verdict": "PASS",
   "failures": [],
   "refusal": false
