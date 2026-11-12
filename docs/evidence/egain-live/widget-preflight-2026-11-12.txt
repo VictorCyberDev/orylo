@@ -1,0 +1,9 @@
+# eGain CORS preflight, captured 2026-11-12T10:17:01Z (curl, no browser interception)
+GET https://api.ai.egain.cloud/core/aiservices/v4/aiagent/details/agent/015f4f90-8772-4065-9e64-894b3615c5d3  (OPTIONS preflight)
+
+Origin: https://orylo-demo.vercel.app
+HTTP/2 200 
+
+Origin: https://ai.egain.cloud
+HTTP/2 200 
+access-control-allow-origin: https://ai.egain.cloud

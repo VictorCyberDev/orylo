@@ -57,3 +57,28 @@ Until a verified action integration exists this is the honest, supported fallbac
 **Escalation is inconsistent:** "Can I get a callback instead?" returned the two options in one run and *"Please contact our customer care for more details."* in another; "I want to talk to a real person" returned the generic message. Configure the two escalation options as an **escalation workflow** (callback request, email follow-up) so they are offered deterministically, not left to retrieval. Re-test with `npm run test:live` (cases K10, W4).
 
 **The chat bubble does not load on the deployed site until eGain admits the site's origin.** eGain's API answers the browser's CORS check only for its own origin (`https://ai.egain.cloud`). Add **`https://orylo-demo.vercel.app`** to the agent's allowed domains / trusted origins (the setting that controls where the embed may run), publish, wait 5 minutes, and `LIVE_PUBLIC_URL=https://orylo-demo.vercel.app npm run test:live` must pass the two widget tests in `tests/live/public.live.spec.ts`. Until then `/demo` shows the unavailable state **and a working link to the agent on eGain's own page**.
+
+---
+
+## Update 2026-11-12 — root cause of K08, K10 and the false completions, and the repair
+
+**K08 ("Will opening a billing review get me a refund today?") — failed because of what the agent did not say.** Its reply was correct on the refund fact
+(*"does not by itself refund, reverse, or credit anything"*) but said reviews are "decided within 5 business days" without saying **who** decides and added
+"any approved refunds are processed through the billing system", which reads as if a refund is the normal result. The policy text never stated plainly that
+the billing team alone decides.
+
+**The false completions ("A billing review has been opened", "your case has been forwarded") have a source in our own policy text.**
+`refund-review-rules` said, unconditionally, *"Say that a review has been opened and that the billing team will decide."* A retrieval agent that is told to *say* that will say it,
+whether or not anything opened a review. That sentence was ours, not eGain's. It is now conditional (only after the billing system confirms), and the documents now define the
+status vocabulary the agent may use (policy guidance provided → … → refund completed) and say that an unconfirmed step "has not been completed".
+
+**K10 / W4 (escalation) — two causes.** (1) Policy said customers "can ask for" a callback or email, not that the assistant must offer both when a person is requested.
+Now stated explicitly, together with "never invent a reference number, callback time or delivery time". (2) The reply *"Please contact our customer care for more details."* is not
+policy text at all — it is eGain's default fallback, which means **no escalation workflow is bound**. Wording cannot fix that; it needs the workflow (`escalation.md`).
+
+**Changed (single source `src/policy/pack.ts`; rebuilt with `npm run egain:export && npm run egain:upload-pack`):**
+`refund-review-rules`, `billing-policy`, `escalation-policy`, `error-failure-handling`, `policy-authority-manifest`. Authorization rules (numbers, thresholds) are untouched;
+139 database tests pass. The other seven documents are unchanged.
+
+**Not fixable by me:** re-uploading those files and adding the instruction in `OWNER-ACTIONS.md` steps 2–4 need the eGain console.
+Knowledge cannot be called complete until both the 13 knowledge cases **and** the guardrail cases (G1–G5, `tests/live/guardrail.live.spec.ts`) pass on the published agent.

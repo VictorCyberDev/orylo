@@ -12,7 +12,7 @@
       "file": "billing-policy",
       "title": "Billing Policy",
       "key": "billing-policy",
-      "sha256OfSourceText": "22964e90777ac65af9dd56a57dd2683078165127da75e402e20ccc3a3d9e0bc5"
+      "sha256OfSourceText": "5a848549e69dcb47c64e8028c1de777ced6f46f4241ca63e1f6387a995f99340"
     },
     {
       "file": "duplicate-charge-investigation",
@@ -24,7 +24,7 @@
       "file": "refund-review-rules",
       "title": "Refund Review Rules",
       "key": "refund-review-rules",
-      "sha256OfSourceText": "7aa6623bacaec045cd477e4907e07baef2d235023b5a6a9625256fc858e206cd"
+      "sha256OfSourceText": "d2ceb060c783b8425a05f99d2e0d3455fcb3f065a4923a7766061b02bbf209d3"
     },
     {
       "file": "identity-verification",
@@ -42,13 +42,13 @@
       "file": "escalation-policy",
       "title": "Escalation Policy",
       "key": "escalation-policy",
-      "sha256OfSourceText": "7abe213b3d8a5de2a05d6faa4c9d947be47511a52d5a048f4b8c395cda49b4dd"
+      "sha256OfSourceText": "641d21cfe593249c6bf18a69853a1dc77200805e30aca6746e15b4493da0f0e5"
     },
     {
       "file": "error-failure-handling",
       "title": "Error and Failure Handling",
       "key": "error-failure-handling",
-      "sha256OfSourceText": "76d390e05983a55d7bd4728f8ee4c81e3118e2587efe3f65dcdb9acac07de6f1"
+      "sha256OfSourceText": "1f70069c46ed32c3f10008c4b8e6b6432de47820eceb6fd0e44467ade42c7723"
     },
     {
       "file": "data-handling",
@@ -72,7 +72,7 @@
       "file": "policy-authority-manifest",
       "title": "Policy Authority and Version Manifest",
       "key": "policy-authority-manifest",
-      "sha256OfSourceText": "36b64c2ebe349d7b215f0e25dafb3f7caf92ed4d95f5feb311df1d3bd5528b4a"
+      "sha256OfSourceText": "e4a45227c6c4b6d2e18ee827a7dee3f241d7c89845f1b5581b87b105d1dd89b6"
     }
   ]
 }

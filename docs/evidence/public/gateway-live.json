@@ -1,0 +1,46 @@
+{
+  "ranAt": "2026-11-12T10:18:44.529Z",
+  "site": "https://orylo-demo.vercel.app",
+  "notEgainOriginated": true,
+  "keyIssued": true,
+  "unauthenticatedStatuses": [
+    401,
+    401,
+    401
+  ],
+  "identityNoEnumeration": true,
+  "sessionState": "READY_FOR_ACTION",
+  "caseReference": "ORY-1001",
+  "consentTextShown": true,
+  "crossCustomerStatus": 404,
+  "consentValidation": {
+    "noIdempotencyKey": 400,
+    "consentAsString": 400,
+    "noConsentField": 400,
+    "shortKey": 400
+  },
+  "cancellation": {
+    "status": "EXECUTED",
+    "verified": true,
+    "replayStatus": "DUPLICATE",
+    "sameReceiptOnReplay": true
+  },
+  "billingReview": {
+    "status": "AWAITING_APPROVAL",
+    "receiptNo": null,
+    "caseState": "AWAITING_APPROVAL"
+  },
+  "receipt": {
+    "receiptNo": "RCPT-20261112-89D8CBA9473219A6",
+    "verifiedPublicly": true,
+    "tamperedRejected": true
+  },
+  "escalation": {
+    "callback": "OPEN",
+    "email": "OPEN",
+    "idempotent": true
+  },
+  "operatorConsoleShowsReceipt": true,
+  "bruteForceLimited": true,
+  "keyRevoked": true
+}
