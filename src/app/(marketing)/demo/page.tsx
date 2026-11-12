@@ -4,7 +4,6 @@ import { Alert, Card, LinkButton, SyntheticBadge } from "@/components/ui";
 import { EgainLaunchButton } from "@/components/egain-chat";
 import { ReceiptCheck, ReviewerAccess } from "@/components/demo-widgets";
 import { getEgainConfig } from "@/config/egain";
-import { getEgainStatus } from "@/config/egain-status";
 import { demoPeople } from "@/config/demo-people";
 import { DEMO_PASSWORD } from "@/seed/world";
 
@@ -20,7 +19,6 @@ const demoOn = () => process.env.DEMO_MODE === "true";
 
 export default function Demo() {
   const eg = getEgainConfig();
-  const st = getEgainStatus();
   const clientCfg = {
     enabled: eg.enabled,
     agentId: eg.agentId,
@@ -54,7 +52,7 @@ export default function Demo() {
           </p>
           <EgainLaunchButton config={clientCfg} />
           <div className="rounded-md border border-border p-4 text-sm">
-            <h3 className="t-h3 mb-2">What is verified about this agent today</h3>
+            <h3 className="t-h3 mb-2">Verified demonstration evidence · 12 November 2026</h3>
             <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-[auto_1fr]">
               <dt className="font-medium">Chat widget</dt>
               <dd className="text-muted">
@@ -62,18 +60,29 @@ export default function Demo() {
               </dd>
               <dt className="font-medium">Policy knowledge</dt>
               <dd className="text-muted">
-                {st.knowledgeVerified
-                  ? "Answers were checked against the Northfield policy documents."
-                  : `Not yet confirmed (checked ${st.checkedOn}). The agent may not answer billing-policy questions until its knowledge is corrected in eGain.`}
+                The published eGain agent answered policy questions using the approved fictional Northfield Digital
+                knowledge pack during live testing. This records an observed test result, not a guarantee that every
+                future response is correct.
               </dd>
               <dt className="font-medium">Actions on accounts</dt>
               <dd className="text-muted">
-                {st.actionsLive
-                  ? "The agent calls Orylo to change the account; each change is read back and receipted."
-                  : "Not connected from the agent. If the agent says a review was opened or a cancellation applied, that wording is wrong: nothing has been changed by the chat. The corrected cancellation and billing review are performed — and verified — in the Orylo portal below, the same governed action path the agent is meant to call."}
+                A customer-consented cancellation initiated through the published eGain workflow changed a fictional
+                subscription, was read back in Orylo, and produced a signed receipt on 12 November 2026. This
+                evidence covers the tested cancellation, not every possible account action. Billing review remains
+                separately pending and no refund was issued.
               </dd>
             </dl>
           </div>
+          <p className="text-sm text-muted">
+            Verify the recorded cancellation independently:{" "}
+            <Link
+              href="/api/v1/receipts/RCPT-20261112-4AFEECF447972200/verify"
+              className="underline"
+            >
+              RCPT-20261112-4AFEECF447972200
+            </Link>
+            . This public check returns a receipt status without revealing customer details.
+          </p>
         </Card>
       </section>
 
@@ -102,8 +111,8 @@ export default function Demo() {
         </ol>
         <Alert tone="warning" title="Two different outcomes — never blurred">
           <strong>Corrected cancellation</strong>: verified by reading the account back, with a signed
-          receipt. <strong>Billing review</strong>: opened and tracked — <em>pending</em>. It is not a refund,
-          and no money has moved until a person decides.
+          receipt. <strong>Billing review</strong>: awaiting separate customer consent —{" "}
+          <em>pending</em>, not opened or refunded. No money has moved.
         </Alert>
       </section>
 
